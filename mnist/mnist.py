@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-  
+﻿# -*- coding: UTF-8 -*-  
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
@@ -48,7 +48,7 @@ def train(mnist):
 
 	average_y = inference(x, variable_averages, weights1, biases1, weights2, biases2)
 
-	cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(y, tf.argmax(y_, 1))
+	cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y, labels=tf.argmax(y_, 1))
 
 	cross_entropy_mean = tf.reduce_mean(cross_entropy)
 
@@ -60,42 +60,41 @@ def train(mnist):
 
 	learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, mnist.train.num_examples / BATCH_SIZE, LEARNING_RATE_DECAY)
 
-train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step=global_step)
+	train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step=global_step)
 
-with tf.control_dependencies([train_step, variable_averages_op]):
-	train_op = tf.no_op(name='train')
+	with tf.control_dependencies([train_step, variable_averages_op]):
+		train_op = tf.no_op(name='train')
 
+	correct_prediction = tf.equal(tf.argmax(average_y, 1), tf.argmax(y_, 1))
 
+	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-correct_prediction = tf.equal(tf.argmax(average_y, 1), tf.argmax(y_, 1))
+	with tf.Session() as sess:
+		init = tf.global_variables_initializer()
 
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+		sess.run(init)
 
-with tf.Session() as sess:
-	tf.initialize_all_variables().run()
+		validate_feed = {x:mnist.validation.images,y_:mnist.validation.labels}
 
-	validate_feed = {x:mnist.validation.images,y_:mnist.validation.labels}
+		test_feed = {x:mnist.test.images, y_:mnist.test.labels}
 
-	test_feed = {x:mnist.test.images, y_:mnist.test.labels}
-
-	for i in range(TRAINING_STEPS):
-		if i % 1000 == 0:
-			validate_acc = sess.run(accuracy, feed_dict=validate_feed)
-			print("After %d training step(s), validation accuracy using average model is %g" % (i, validate_acc))
-
-
-		xs, ys = mnist.train.next_batch(BATCH_SIZE)
-
-		sess.run(train_op, feed_dict={x:xs,y_:ys})
+		for i in range(TRAINING_STEPS):
+			if i % 1000 == 0:
+				validate_acc = sess.run(accuracy, feed_dict=validate_feed)
+				print("After %d training step(s), validation accuracy using average model is %g" % (i, validate_acc))
 
 
-	test_acc = sess.run(accuracy, feed_dict=test_feed)
-	print("After %d training step(s), test accuracy using average model is %g" % (TRAINING_STEPS, test_acc))
+			xs, ys = mnist.train.next_batch(BATCH_SIZE)
 
+			sess.run(train_op, feed_dict={x:xs,y_:ys})
+
+
+		test_acc = sess.run(accuracy, feed_dict=test_feed)
+		print("After %d training step(s), test accuracy using average model is %g" % (TRAINING_STEPS, test_acc))
 
 
 def main(argv=None):
-	mnist = input_data.read_datasets("/ayesha/mnist", one_hot=True)
+	mnist = input_data.read_data_sets("/home/ayesha/mnist", one_hot=True)
 	train(mnist)
 
 if __name__ == '__main__':
