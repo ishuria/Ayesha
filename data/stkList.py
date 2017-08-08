@@ -5,10 +5,9 @@ import json
 import MySQLdb as mdb
 import stock_sql
 
-
 #常量
-
-markets = ['sh','sz','hk']
+#'sh','sz',
+markets = ['hk']
 host = 'https://ali-stock.showapi.com'
 path = '/stocklist'
 method = 'GET'
@@ -27,16 +26,17 @@ def processStockData():
 		curr_page = 1
 		total_pages = 99
 		while curr_page < total_pages:
+			print('curr_page = '+bytes(curr_page)+', market = '+market)
 			content = requestContent(market,curr_page)
 			#将返回的字符串转换为json对象
 			json_content = json.loads(content)
 			#提取全部页数
 			total_pages = int(json_content['showapi_res_body']['allPages'])
+			contentlist = json_content['showapi_res_body']['contentlist']
+			processContentList(contentlist)
 			#如果当前请求的页数没有达到全部页数，则当前页+1
 			if(curr_page < total_pages):
 				curr_page = curr_page + 1
-			contentlist = json_content['showapi_res_body']['contentlist']
-			processContentList(contentlist)
 
 #查询market,page条件下的股票产品
 def requestContent(market,page):
@@ -58,29 +58,64 @@ def processContentList(content_list_json):
 def saveToDB(stock_json):
 	conn = mdb.connect(host=mysql_ip, port=mysql_port,user=mysql_user,passwd=mysql_pass,db=mysql_db,charset='utf8')
 	cursor = conn.cursor()
-	stockType = stock_json['stockType']
-	market = stock_json['market']
-	name = stock_json['name']
-	state = stock_json['state']
-	currcapital = stock_json['currcapital']
-	profit_four = stock_json['profit_four']
-	code = stock_json['code']
-	totalcapital = stock_json['totalcapital']
-	mgjzc = stock_json['mgjzc']
-	pinyin = stock_json['pinyin']
-	listing_date = stock_json['listing_date']
-	ct = stock_json['ct']
+	stockType = ''
+	if stock_json.has_key('stockType'):
+		stockType = stock_json['stockType']
+
+	market = ''
+	if stock_json.has_key('market'):
+		market = stock_json['market']
+
+	name = ''
+	if stock_json.has_key('name'):
+		name = stock_json['name']
+
+	state = ''
+	if stock_json.has_key('state'):
+		state = stock_json['state']
+
+	currcapital = ''
+	if stock_json.has_key('currcapital'):
+		currcapital = stock_json['currcapital']
+
+	profit_four = ''
+	if stock_json.has_key('profit_four'):
+		profit_four = stock_json['profit_four']
+
+	code = ''
+	if stock_json.has_key('code'):
+		code = stock_json['code']
+
+	totalcapital = ''
+	if stock_json.has_key('totalcapital'):
+		totalcapital = stock_json['totalcapital']
+
+	mgjzc = ''
+	if stock_json.has_key('mgjzc'):
+		mgjzc = stock_json['mgjzc']
+
+	pinyin = ''
+	if stock_json.has_key('pinyin'):
+		pinyin = stock_json['pinyin']
+
+	listing_date = ''
+	if stock_json.has_key('listing_date'):
+		listing_date = stock_json['listing_date']
+
+	ct = ''
+	if stock_json.has_key('ct'):
+		ct = stock_json['ct']
 
 	cursor.execute(stock_sql.stock_count_sql , [code])
 	result = cursor.fetchone()
 	count = result[0]
 	#如果有记录，更新
 	if count == 1:
-		print('update')
+		print('update code = ' + code)
 		cursor.execute(stock_sql.stock_update_sql,[stockType,market,name,state,currcapital,profit_four,totalcapital,mgjzc,pinyin,listing_date,ct,code])
 	#否则新增数据
 	else:
-		print('insert')
+		print('insert code = ' + code)
 		cursor.execute(stock_sql.stock_insert_sql,[stockType,market,name,state,currcapital,profit_four,code,totalcapital,mgjzc,pinyin,listing_date,ct])
 	conn.commit()
 	cursor.close()
