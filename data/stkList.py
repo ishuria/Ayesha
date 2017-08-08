@@ -1,12 +1,13 @@
+#coding=utf-8
 import urllib, urllib2, sys
 import ssl
 import json
 import MySQLdb as mdb
+import stock_sql
 
 
 #常量
-curr_page = 1
-total_pages = -1
+
 markets = ['sh','sz','hk']
 host = 'https://ali-stock.showapi.com'
 path = '/stocklist'
@@ -16,31 +17,30 @@ bodys = {}
 
 #数据库配置
 mysql_ip = '106.15.72.40'
-mysql_port = '3306'
+mysql_port = 3306
 mysql_user = 'ayesha'
 mysql_pass = 'Ayesha_topaz77'
 mysql_db = 'ayesha'
 
-#将返回的字符串转换为json对象
-json_content = json.loads(content)
-#提取全部页数
-total_pages = int(json_content['showapi_res_body']['allPages'])
-#如果当前请求的页数没有达到全部页数，则当前页+1
-if(curr_page < total_pages):
-	curr_page = curr_page + 1
-#如果当前请求的页数已经达到了上限，切换市场
-else:
-
-
-
-
-#with open('result.txt', 'w') as f:
-#    f.write(content)
-
+def processStockData():
+	for market in markets:
+		curr_page = 1
+		total_pages = 99
+		while curr_page < total_pages:
+			content = requestContent(market,curr_page)
+			#将返回的字符串转换为json对象
+			json_content = json.loads(content)
+			#提取全部页数
+			total_pages = int(json_content['showapi_res_body']['allPages'])
+			#如果当前请求的页数没有达到全部页数，则当前页+1
+			if(curr_page < total_pages):
+				curr_page = curr_page + 1
+			contentlist = json_content['showapi_res_body']['contentlist']
+			processContentList(contentlist)
 
 #查询market,page条件下的股票产品
 def requestContent(market,page):
-	url = host + path + '?' + 'market=' + market + '&' + 'page='+page
+	url = host + path + '?' + 'market=' + market + '&' + 'page='+bytes(page)
 	request = urllib2.Request(url)
 	request.add_header('Authorization', 'APPCODE ' + appcode)
 	ctx = ssl.create_default_context()
@@ -50,9 +50,43 @@ def requestContent(market,page):
 	content = response.read()
 	return content
 
+def processContentList(content_list_json):
+	for content in content_list_json:
+		saveToDB(content)
+
+
 def saveToDB(stock_json):
-	with mdb.connect(mysql_ip, mysql_port,mysql_user, mysql_pass,mysql_db) as con:
-		cur = conn.cursor()
-		code = stock_json['code']
-		record = cur.execute('select * from stock where code = %s' , [code]).fetchone();
+	conn = mdb.connect(host=mysql_ip, port=mysql_port,user=mysql_user,passwd=mysql_pass,db=mysql_db,charset='utf8')
+	cursor = conn.cursor()
+	stockType = stock_json['stockType']
+	market = stock_json['market']
+	name = stock_json['name']
+	state = stock_json['state']
+	currcapital = stock_json['currcapital']
+	profit_four = stock_json['profit_four']
+	code = stock_json['code']
+	totalcapital = stock_json['totalcapital']
+	mgjzc = stock_json['mgjzc']
+	pinyin = stock_json['pinyin']
+	listing_date = stock_json['listing_date']
+	ct = stock_json['ct']
+
+	cursor.execute(stock_sql.stock_count_sql , [code])
+	result = cursor.fetchone()
+	count = result[0]
+	#如果有记录，更新
+	if count == 1:
+		print('update')
+		cursor.execute(stock_sql.stock_update_sql,[stockType,market,name,state,currcapital,profit_four,totalcapital,mgjzc,pinyin,listing_date,ct,code])
+	#否则新增数据
+	else:
+		print('insert')
+		cursor.execute(stock_sql.stock_insert_sql,[stockType,market,name,state,currcapital,profit_four,code,totalcapital,mgjzc,pinyin,listing_date,ct])
+	conn.commit()
+	cursor.close()
+	conn.close()
+
+
+if __name__ == '__main__':
+	processStockData()
 

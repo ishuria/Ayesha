@@ -1,5 +1,5 @@
 #coding=utf-8
-stock_count_sql = 'SELECT count(1) from stock where stock.`code` = %s'
+stock_count_sql = 'SELECT count(1) count from stock where stock.`code` = %s'
 
 stock_select_sql =  ''.join(['SELECT ',
 								'stock.stockType, ',
