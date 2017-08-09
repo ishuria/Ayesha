@@ -11,7 +11,6 @@ markets = ['hk']
 host = 'https://ali-stock.showapi.com'
 path = '/stocklist'
 method = 'GET'
-appcode = 'f86b2760312b41a0b9ef963ceca71b0b'
 bodys = {}
 
 #数据库配置
@@ -42,7 +41,7 @@ def processStockData():
 def requestContent(market,page):
 	url = host + path + '?' + 'market=' + market + '&' + 'page='+bytes(page)
 	request = urllib2.Request(url)
-	request.add_header('Authorization', 'APPCODE ' + appcode)
+	request.add_header('Authorization', 'APPCODE ' + config.appcode)
 	ctx = ssl.create_default_context()
 	ctx.check_hostname = False
 	ctx.verify_mode = ssl.CERT_NONE
