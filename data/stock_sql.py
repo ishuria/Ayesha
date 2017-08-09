@@ -123,3 +123,72 @@ stock_history_update_sql = ''.join(['UPDATE stock_history ',
 							'WHERE ',
 								'stock_history.`code` = %s AND stock_history.date = %s '])
 ##################################stock_history##################################end
+
+
+
+
+##################################stock_history_163##################################
+stock_history_count_sql_163 = 'SELECT count(1) count FROM stock_history WHERE stock_history.`code` = %s AND stock_history.date = %s'
+
+stock_history_select_sql_163 =  ''.join(['SELECT ',
+								'stock_history.min_price, ',
+								'stock_history.market, ',
+								'stock_history.trade_num, ',
+								'stock_history.trade_money, ',
+								'stock_history.close_price, ',
+								'stock_history.open_price, ',
+								'stock_history.`code`, ',
+								'stock_history.max_price, ',
+								'stock_history.date, ',
+								'stock_history.last_close_price, ',
+								'stock_history.increase, ',
+								'stock_history.increase_rate, ',
+								'stock_history.turnover_rate, ',
+								'stock_history.total_value, ',
+								'stock_history.circulation_value ',
+							'FROM ',
+								'stock_history ',
+							'WHERE ',
+								'stock_history.`code` = %s AND stock_history.date = %s '])
+
+stock_history_insert_sql_163 = ''.join(['INSERT INTO stock_history ( ',
+								'stock_history.min_price, ',
+								'stock_history.market, ',
+								'stock_history.trade_num, ',
+								'stock_history.trade_money, ',
+								'stock_history.close_price, ',
+								'stock_history.open_price, ',
+								'stock_history.`code`, ',
+								'stock_history.max_price, ',
+								'stock_history.date, '
+								'stock_history.last_close_price, ',
+								'stock_history.increase, ',
+								'stock_history.increase_rate, ',
+								'stock_history.turnover_rate, ',
+								'stock_history.total_value, ',
+								'stock_history.circulation_value ',
+							') ',
+							'VALUES ',
+								'( ',
+									'%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s,%s ,%s,%s ,%s,%s ,%s ',
+								')'])
+
+stock_history_delete_sql_163 = 'DELETE FROM stock_history WHERE stock_history.`code` = %s AND stock_history.date = %s'
+
+stock_history_update_sql_163 = ''.join(['UPDATE stock_history ',
+							'SET stock_history.min_price = %s, ',
+							 'stock_history.market = %s, ',
+							 'stock_history.trade_num = %s, ',
+							 'stock_history.trade_money = %s, ',
+							 'stock_history.close_price = %s, ',
+							 'stock_history.open_price = %s, ',
+							 'stock_history.max_price = %s, ',
+							 'stock_history.last_close_price = %s , ',
+							 'stock_history.increase = %s , ',
+							 'stock_history.increase_rate = %s , ',
+							 'stock_history.turnover_rate = %s , ',
+							 'stock_history.total_value = %s , ',
+							 'stock_history.circulation_value = %s ',
+							'WHERE ',
+								'stock_history.`code` = %s AND stock_history.date = %s '])
+##################################stock_history_163##################################end
