@@ -38,36 +38,106 @@ def processHistoryData(begin,end):
 			os.remove(code + '.csv')
 
 
+def trimValue(value):
+	value = value.replace('\'','')
+	if value == 'None' or value == '':
+		value = None
+	return value
+
+
 
 def saveToDB(cursor,stock_line,market):
-	
-
 	contents = stock_line.split(',')
-	#日期0,股票代码1,名称2,收盘价3,最高价4,最低价5,开盘价6,前收盘7,涨跌额8,涨跌幅9,换手率10,成交量11,成交金额12,总市值13,流通市值14,成交笔数15
-	min_price = contents[5]
-	trade_num = contents[11]
-	trade_money = contents[12]
-	close_price = contents[3]
-	open_price = contents[6]
-	code = contents[1].replace('\'','')
-	max_price = contents[4]
-	date = contents[0]
-	last_close_price = contents[7]
-	increase = contents[8]
-	increase_rate = contents[9]
-	turnover_rate = contents[10]
 
-	total_value = ''
+	#日期0,股票代码1,名称2,收盘价3,最高价4,最低价5,开盘价6,前收盘7,涨跌额8,涨跌幅9,换手率10,成交量11,成交金额12,总市值13,流通市值14,成交笔数15
+
+	#最低价5
+	min_price = trimValue(contents[5])
 	try:
-		total_value = '{:.4f}'.format(float(contents[13]))  
+		min_price = format(float(min_price),'0.2f')
 	except:
-		total_value = ''
+		min_price = None
+		
+	#成交量11
+	trade_num = trimValue(contents[11])
+	try:
+		trade_num = format(float(trade_num),'0.4f')
+	except:
+		trade_num = None
+
+	#成交金额12
+	trade_money = trimValue(contents[12])
+	try:
+		trade_money = format(float(trade_money),'0.4f')
+	except:
+		trade_money = None
+
+	#收盘价3
+	close_price = trimValue(contents[3])
+	try:
+		close_price = format(float(close_price),'0.2f')
+	except:
+		close_price = None
+
+	#开盘价6
+	open_price = trimValue(contents[6])
+	try:
+		open_price = format(float(open_price),'0.2f')
+	except:
+		open_price = None
+
+	code = trimValue(contents[1])
+
+	#最高价4
+	max_price = trimValue(contents[4])
+	try:
+		max_price = format(float(max_price),'0.2f')
+	except:
+		max_price = None
+
+	date = trimValue(contents[0])
+
+	#前收盘7
+	last_close_price = trimValue(contents[7])
+	try:
+		last_close_price = format(float(last_close_price),'0.2f')
+	except:
+		last_close_price = None
+
+	#涨跌额8
+	increase = trimValue(contents[8])
+	try:
+		increase = format(float(increase),'0.2f')
+	except:
+		increase = None
+
+	#涨跌幅9
+	increase_rate = trimValue(contents[9])
+	try:
+		increase_rate = format(float(increase_rate),'0.4f')
+	except:
+		increase_rate = None
+
+	#换手率10
+	turnover_rate = trimValue(contents[10])
+	try:
+		turnover_rate = format(float(turnover_rate),'0.4f')
+	except:
+		turnover_rate = None
+
+	#总市值13
+	total_value = trimValue(contents[13])
+	try:
+		total_value = format(float(total_value),'0.4f')
+	except:
+		total_value = None
 	
-	circulation_value = ''
+	#流通市值14
+	circulation_value = trimValue(contents[14])
 	try:
-		circulation_value = '{:.4f}'.format(float(contents[14]))
+		circulation_value = format(float(circulation_value),'0.4f')
 	except:
-		circulation_value = ''
+		circulation_value = None
 
 
 	cursor.execute(stock_sql.stock_history_count_sql_163 , [code, date])
@@ -108,6 +178,6 @@ def requestHistoryData(begin,end,code,market_code):
 if __name__ == '__main__':
 	processHistoryData('20000101','20170809')
 	#print '{:.4f}'.format(float('1.83549222401e+12'))
-	
+	#print(float(None))
 
 
