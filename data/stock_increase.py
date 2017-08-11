@@ -4,6 +4,7 @@ import MySQLdb as mdb
 import stock_sql
 import config
 import math
+import decimal
 
 
 
@@ -21,6 +22,9 @@ def processIncrease(begin,end):
 
 
 def processStockIncrease(begin,end,code,market):
+	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
+	cursor = conn.cursor()
+
 	stock_history_list = requestStockHistory(begin,end,code)
 	for stock_history in stock_history_list:
 		date = stock_history[8]
@@ -30,10 +34,10 @@ def processStockIncrease(begin,end,code,market):
 		inc_day = calcIncrease(data_set_y_day[0],data_set_y_day[len(data_set_y_day)-1])
 
 		data_set_x_30 = getDataSetX(stock_history_list,date,30)
-		print(data_set_x_30)
 		data_set_y_30 = getDataSetY(stock_history_list,date,30)
-		print(data_set_y_30)
-
+		inc_30 = None
+		fit_inc_30_1 = None
+		fit_inc_30_2 = None
 		if len(data_set_x_30) == 30 and len(data_set_y_30) == 30:
 			inc_30 = calcIncrease(data_set_y_30[0],data_set_y_30[len(data_set_y_30)-1])
 			fit_inc_30_1 = calcPolyfit(data_set_x_30,data_set_y_30,1)
@@ -41,6 +45,9 @@ def processStockIncrease(begin,end,code,market):
 
 		data_set_x_90 = getDataSetX(stock_history_list,date,90)
 		data_set_y_90 = getDataSetY(stock_history_list,date,90)
+		inc_90 = None
+		fit_inc_90_1 = None
+		fit_inc_90_2 = None
 		if len(data_set_x_90) == 90 and len(data_set_y_90) == 90:
 			inc_90 = calcIncrease(data_set_y_90[0],data_set_y_90[len(data_set_y_90)-1])
 			fit_inc_90_1 = calcPolyfit(data_set_x_90,data_set_y_90,1)
@@ -48,6 +55,9 @@ def processStockIncrease(begin,end,code,market):
 
 		data_set_x_180 = getDataSetX(stock_history_list,date,180)
 		data_set_y_180 = getDataSetY(stock_history_list,date,180)
+		inc_180 = None
+		fit_inc_180_1 = None
+		fit_inc_180_2 = None
 		if len(data_set_x_180) == 180 and len(data_set_y_180) == 180:
 			inc_180 = calcIncrease(data_set_y_180[0],data_set_y_180[len(data_set_y_180)-1])
 			fit_inc_180_1 = calcPolyfit(data_set_x_180,data_set_y_180,1)
@@ -55,10 +65,41 @@ def processStockIncrease(begin,end,code,market):
 
 		data_set_x_360 = getDataSetX(stock_history_list,date,360)
 		data_set_y_360 = getDataSetY(stock_history_list,date,360)
+		inc_360 = None
+		fit_inc_360_1 = None
+		fit_inc_360_2 = None
 		if len(data_set_x_360) == 360 and len(data_set_y_360) == 360:
 			inc_360 = calcIncrease(data_set_y_360[0],data_set_y_360[len(data_set_y_360)-1])
 			fit_inc_360_1 = calcPolyfit(data_set_x_360,data_set_y_360,1)
 			fit_inc_360_2 = calcPolyfit(data_set_x_360,data_set_y_360,2)
+
+		cursor.execute(''.join(['INSERT INTO stock_increase ( ',
+								'stock_increase.date, ',
+								'stock_increase.`code`, ',
+								'stock_increase.inc_day, ',
+								'stock_increase.inc_30, ',
+								'stock_increase.inc_90, ',
+								'stock_increase.inc_180, ',
+								'stock_increase.inc_360, ',
+								'stock_increase.fit_inc_30_1, ',
+								'stock_increase.fit_inc_30_2, '
+								'stock_increase.fit_inc_90_1, ',
+								'stock_increase.fit_inc_90_2, ',
+								'stock_increase.fit_inc_180_1, ',
+								'stock_increase.fit_inc_180_2, ',
+								'stock_increase.fit_inc_360_1, ',
+								'stock_increase.fit_inc_360_2 ',
+							') ',
+							'VALUES ',
+								'( ',
+									'%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s,%s ,%s,%s ,%s,%s ,%s ',
+								')']), [date,code,inc_day,inc_30,inc_90,inc_180,inc_360,fit_inc_30_1,fit_inc_30_2,fit_inc_90_1,fit_inc_90_2,fit_inc_180_1,fit_inc_180_2,fit_inc_360_1,fit_inc_360_2])
+
+
+
+	conn.commit()
+	cursor.close()
+	conn.close()
 
 	'''
 	inc_day
@@ -78,6 +119,8 @@ def processStockIncrease(begin,end,code,market):
 	return None
 
 def calcIncrease(prev_value,curr_value):
+	if prev_value == 0:
+		return None
 	return format((curr_value - prev_value) / prev_value,'0.4f')
 
 def calcPolyfit(dataX,dataY,degree):
@@ -99,8 +142,8 @@ def getDataSetX(stock_history_list,end,peroid):
 		if start_collect:
 			data_set.append(peroid)
 			peroid = peroid - 1
-			if peroid < 0:
-				return None
+			if peroid <= 0:
+				return data_set
 	return data_set
 
 def getDataSetY(stock_history_list,end,peroid):
@@ -111,10 +154,10 @@ def getDataSetY(stock_history_list,end,peroid):
 		if date == end:
 			start_collect = True
 		if start_collect:
-			data_set.append(stock_history_list[i][4])
+			data_set.append(float(stock_history_list[i][4]))
 			peroid = peroid - 1
-			if peroid < 0:
-				return None
+			if peroid <= 0:
+				return data_set
 	return data_set
 
 def requestStockHistory(begin,end,code):
