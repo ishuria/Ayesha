@@ -5,30 +5,31 @@ import stock_sql
 import config
 import MySQLdb as mdb
 from itertools import islice  
-
+import datetime
 
 host = 'http://quotes.money.163.com/service/chddata.html'
 markets = ['sh','sz']
-
-
 
 def processCSV(file_name,market):
 	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
 	cursor = conn.cursor()
 	with open(file_name) as f:
 		lines = f.readlines()
-		for line in islice(lines, 1, None):  
-			#print line.split(',')
+		for line in islice(lines, 1, None): 
 			saveToDB(cursor,line,market)
 	conn.commit()
 	cursor.close()
 	conn.close()
 
-
 def processHistoryData(begin,end):
+	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
+	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
+
+	begin = begindate.strftime('%Y%m%d')
+	end = enddate.strftime('%Y%m%d')
 	for market in markets:
 		code_list = getCodeList(market)
-		line_num = 0  
+		line_num = 0
 		for code in code_list:
 			if market == 'sh':
 				requestHistoryData(begin,end,code,0)
@@ -37,14 +38,11 @@ def processHistoryData(begin,end):
 			processCSV(code + '.csv',market)
 			os.remove(code + '.csv')
 
-
 def trimValue(value):
 	value = value.replace('\'','')
 	if value == 'None' or value == '':
 		value = None
 	return value
-
-
 
 def saveToDB(cursor,stock_line,market):
 	contents = stock_line.split(',')
@@ -170,14 +168,29 @@ def getCodeList(market):
 
 def requestHistoryData(begin,end,code,market_code):
 	url = host + '?code=' + bytes(market_code) + bytes(code) + '&start=' + begin + '&end=' + end 
+	print(url)
 	f = urllib2.urlopen(url) 
 	data = f.read() 
 	with open(code + '.csv', "w") as file:     
 	    file.write(data)
 
 if __name__ == '__main__':
-	processHistoryData('20000101','20170809')
+	processHistoryData('2017-08-14','2017-08-14')
 	#print '{:.4f}'.format(float('1.83549222401e+12'))
 	#print(float(None))
+
+	'''
+	begin = '2017-01-01'
+	end = '2017-07-31'
+
+	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
+	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
+
+	begin = begindate.strftime('%Y%m%d')
+	end = enddate.strftime('%Y%m%d')
+
+	print(begin)
+	print(end)
+	'''
 
 

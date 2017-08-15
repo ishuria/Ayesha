@@ -29,8 +29,8 @@ def processStockIncrease(begin,end,code,market):
 	for stock_history in stock_history_list:
 		date = stock_history[8]
 		#计算inc_day
-		data_set_x_day = getDataSetX(stock_history_list,date,1)
-		data_set_y_day = getDataSetY(stock_history_list,date,1)
+		data_set_x_day = getDataSetX(stock_history_list,date,2)
+		data_set_y_day = getDataSetY(stock_history_list,date,2)
 		inc_day = calcIncrease(data_set_y_day[0],data_set_y_day[len(data_set_y_day)-1])
 
 		data_set_x_30 = getDataSetX(stock_history_list,date,30)
@@ -73,49 +73,67 @@ def processStockIncrease(begin,end,code,market):
 			fit_inc_360_1 = calcPolyfit(data_set_x_360,data_set_y_360,1)
 			fit_inc_360_2 = calcPolyfit(data_set_x_360,data_set_y_360,2)
 
-		cursor.execute(''.join(['INSERT INTO stock_increase ( ',
-								'stock_increase.date, ',
-								'stock_increase.`code`, ',
-								'stock_increase.inc_day, ',
-								'stock_increase.inc_30, ',
-								'stock_increase.inc_90, ',
-								'stock_increase.inc_180, ',
-								'stock_increase.inc_360, ',
-								'stock_increase.fit_inc_30_1, ',
-								'stock_increase.fit_inc_30_2, '
-								'stock_increase.fit_inc_90_1, ',
-								'stock_increase.fit_inc_90_2, ',
-								'stock_increase.fit_inc_180_1, ',
-								'stock_increase.fit_inc_180_2, ',
-								'stock_increase.fit_inc_360_1, ',
-								'stock_increase.fit_inc_360_2 ',
-							') ',
-							'VALUES ',
-								'( ',
-									'%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s,%s ,%s,%s ,%s,%s ,%s ',
-								')']), [date,code,inc_day,inc_30,inc_90,inc_180,inc_360,fit_inc_30_1,fit_inc_30_2,fit_inc_90_1,fit_inc_90_2,fit_inc_180_1,fit_inc_180_2,fit_inc_360_1,fit_inc_360_2])
+
+		cursor.execute(''.join(['SELECT count(1)', 
+							'FROM ',
+								'stock_increase ',
+							'WHERE ',
+								'stock_increase.`code` = %s AND stock_increase.date= %s ']), [code, date])
+		result = cursor.fetchone()
+		count = result[0]
+		#如果有记录，更新
+		if count == 1:
+			print('update increase code = ' + code + ',date = ' + date)
+			cursor.execute(''.join(['UPDATE stock_increase set ',
+										'stock_increase.inc_day = %s, ',
+										'stock_increase.inc_30 = %s, ',
+										'stock_increase.inc_90 = %s, ',
+										'stock_increase.inc_180 = %s, ',
+										'stock_increase.inc_360 = %s, ',
+										'stock_increase.fit_inc_30_1 = %s, ',
+										'stock_increase.fit_inc_30_2 = %s, '
+										'stock_increase.fit_inc_90_1 = %s, ',
+										'stock_increase.fit_inc_90_2 = %s, ',
+										'stock_increase.fit_inc_180_1 = %s, ',
+										'stock_increase.fit_inc_180_2 = %s, ',
+										'stock_increase.fit_inc_360_1 = %s, ',
+										'stock_increase.fit_inc_360_2 = %s ',
+									'WHERE ',
+										'stock_increase.`code` = %s AND stock_increase.date= %s ']), [inc_day,inc_30,inc_90,inc_180,inc_360,fit_inc_30_1,fit_inc_30_2,fit_inc_90_1,fit_inc_90_2,fit_inc_180_1,fit_inc_180_2,fit_inc_360_1,fit_inc_360_2,code, date])
+
+
+		#否则新增数据
+		else:
+			print('insert increase code = ' + code + ',date = ' + date)
+			cursor.execute(''.join(['INSERT INTO stock_increase ( ',
+										'stock_increase.date, ',
+										'stock_increase.`code`, ',
+										'stock_increase.inc_day, ',
+										'stock_increase.inc_30, ',
+										'stock_increase.inc_90, ',
+										'stock_increase.inc_180, ',
+										'stock_increase.inc_360, ',
+										'stock_increase.fit_inc_30_1, ',
+										'stock_increase.fit_inc_30_2, '
+										'stock_increase.fit_inc_90_1, ',
+										'stock_increase.fit_inc_90_2, ',
+										'stock_increase.fit_inc_180_1, ',
+										'stock_increase.fit_inc_180_2, ',
+										'stock_increase.fit_inc_360_1, ',
+										'stock_increase.fit_inc_360_2 ',
+									') ',
+									'VALUES ',
+										'( ',
+											'%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s,%s ,%s,%s ,%s,%s ,%s ',
+										')']), [date,code,inc_day,inc_30,inc_90,inc_180,inc_360,fit_inc_30_1,fit_inc_30_2,fit_inc_90_1,fit_inc_90_2,fit_inc_180_1,fit_inc_180_2,fit_inc_360_1,fit_inc_360_2])
+
+
 
 
 
 	conn.commit()
 	cursor.close()
 	conn.close()
-
-	'''
-	inc_day
-	inc_30
-	inc_90
-	inc_180
-	inc_360
-	fit_inc_30_1
-	fit_inc_90_1
-	fit_inc_180_1
-	fit_inc_360_1
-	fit_inc_30_2
-	fit_inc_90_2
-	fit_inc_180_2
-	fit_inc_360_2
-	'''
 	return None
 
 def calcIncrease(prev_value,curr_value):
@@ -123,6 +141,10 @@ def calcIncrease(prev_value,curr_value):
 		return None
 	return format((curr_value - prev_value) / prev_value,'0.4f')
 
+#入参为顺序数组
+#eg:
+#dataX:[1,2,3,4,5]
+#dataY:[10.00,10.12,10.22,9.98,10.04]
 def calcPolyfit(dataX,dataY,degree):
 	params = np.polyfit(dataX, dataY, degree)
 	level = len(params)
@@ -130,8 +152,10 @@ def calcPolyfit(dataX,dataY,degree):
 	y = 0;
 	for i in range(0, level, 1):
 		y = y + params[i]*math.pow(x, level - i - 1)
-	return y
+	prev_value = dataY[0]
+	return format((y - prev_value) / prev_value , '0.4f')
 
+#这里获取的是倒转数组，因此需要reverse
 def getDataSetX(stock_history_list,end,peroid):
 	data_set = []
 	start_collect = False
@@ -142,9 +166,12 @@ def getDataSetX(stock_history_list,end,peroid):
 		if start_collect:
 			data_set.append(peroid)
 			peroid = peroid - 1
+			'''
+			修改跳出条件
+			'''
 			if peroid <= 0:
-				return data_set
-	return data_set
+				return reverse(data_set)
+	return reverse(data_set)
 
 def getDataSetY(stock_history_list,end,peroid):
 	data_set = []
@@ -154,11 +181,14 @@ def getDataSetY(stock_history_list,end,peroid):
 		if date == end:
 			start_collect = True
 		if start_collect:
-			data_set.append(float(stock_history_list[i][4]))
+			data_set.append(float(stock_history_list[i][15]))
 			peroid = peroid - 1
+			'''
+			修改跳出条件
+			'''
 			if peroid <= 0:
-				return data_set
-	return data_set
+				return reverse(data_set)
+	return reverse(data_set)
 
 def requestStockHistory(begin,end,code):
 	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
@@ -180,12 +210,12 @@ def requestStockHistory(begin,end,code):
 								'stock_history.increase_rate, ',
 								'stock_history.turnover_rate, ',
 								'stock_history.total_value, ',
-								'stock_history.circulation_value ',
+								'stock_history.circulation_value, ',
+								'stock_history.fq_close_price ',
 							'FROM ',
 								'stock_history ',
 							'WHERE ',
-								'stock_history.`code` = %s ']), [code])
-
+								'stock_history.`code` = %s AND stock_history.fq_close_price is not null order by date asc ']), [code])
 
 	results = cursor.fetchall()
 	for result in results:
@@ -212,8 +242,15 @@ def getCodeList(market):
 	conn.close()
 	return stock_list
 
+def reverse(arr):
+	reverse_arr = []
+	for i in range(len(arr)-1,-1,-1):
+		reverse_arr.append(arr[i])
+	return reverse_arr
 
 if __name__ == '__main__':
-	processStockIncrease('2000-01-01','2017-08-09','600000','sh')
+	#print(reverse([1,2,3,4,5]))
+	processIncrease('2000-01-01','2017-08-09')
+	#processStockIncrease('2016-01-01','2017-08-09','600000','sh')
 	#print(calcPolyfit([1,2,4],[1,2,3],2))
 	#getDataSetX([1,2,3,4,5],5,5)
