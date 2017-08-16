@@ -74,18 +74,28 @@ def train(mnist):
 
 		sess.run(init)
 
+		print('mnist.validation.images')
+		print(mnist.validation.images)
+		print('mnist.validation.labels:')
+		print(mnist.validation.labels)
 		validate_feed = {x:mnist.validation.images,y_:mnist.validation.labels}
 
 		test_feed = {x:mnist.test.images, y_:mnist.test.labels}
 
 		for i in range(TRAINING_STEPS):
 			if i % 1000 == 0:
+				#使用验证数据测试准确率
 				validate_acc = sess.run(accuracy, feed_dict=validate_feed)
 				print("After %d training step(s), validation accuracy using average model is %g" % (i, validate_acc))
 
-
+			#获取下一批训练数据
 			xs, ys = mnist.train.next_batch(BATCH_SIZE)
 
+			print('xs:')
+			print(xs)
+			print('ys:')
+			print(ys)
+			
 			sess.run(train_op, feed_dict={x:xs,y_:ys})
 
 
@@ -95,6 +105,7 @@ def train(mnist):
 
 def main(argv=None):
 	mnist = input_data.read_data_sets("/home/ayesha/mnist", one_hot=True)
+	#print(mnist.validation)
 	train(mnist)
 
 if __name__ == '__main__':
