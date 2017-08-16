@@ -5,7 +5,7 @@ import stock_sql
 import config
 import math
 import decimal
-
+import datetime
 
 
 markets = ['sh','sz']
@@ -28,6 +28,10 @@ def processStockIncrease(begin,end,code,market):
 	stock_history_list = requestStockHistory(begin,end,code)
 	for stock_history in stock_history_list:
 		date = stock_history[8]
+
+		if date < begin or date > end:
+			continue
+
 		#计算inc_day
 		data_set_x_day = getDataSetX(stock_history_list,date,2)
 		data_set_y_day = getDataSetY(stock_history_list,date,2)
@@ -195,27 +199,46 @@ def requestStockHistory(begin,end,code):
 	cursor = conn.cursor()
 
 	stock_history_list = []
+
+	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
+	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
+	diff = (enddate-begindate).days
+
+
 	cursor.execute(''.join(['SELECT ',
-								'stock_history.min_price, ',
-								'stock_history.market, ',
-								'stock_history.trade_num, ',
-								'stock_history.trade_money, ',
-								'stock_history.close_price, ',
-								'stock_history.open_price, ',
-								'stock_history.`code`, ',
-								'stock_history.max_price, ',
-								'stock_history.date, ',
-								'stock_history.last_close_price, ',
-								'stock_history.increase, ',
-								'stock_history.increase_rate, ',
-								'stock_history.turnover_rate, ',
-								'stock_history.total_value, ',
-								'stock_history.circulation_value, ',
-								'stock_history.fq_close_price ',
+								'* ',
 							'FROM ',
-								'stock_history ',
-							'WHERE ',
-								'stock_history.`code` = %s AND stock_history.fq_close_price is not null order by date asc ']), [code])
+								'( ',
+									'SELECT ',
+										'stock_history.min_price, ',
+										'stock_history.market, ',
+										'stock_history.trade_num, ',
+										'stock_history.trade_money, ',
+										'stock_history.close_price, ',
+										'stock_history.open_price, ',
+										'stock_history.`code`, ',
+										'stock_history.max_price, ',
+										'stock_history.date, ',
+										'stock_history.last_close_price, ',
+										'stock_history.increase, ',
+										'stock_history.increase_rate, ',
+										'stock_history.turnover_rate, ',
+										'stock_history.total_value, ',
+										'stock_history.circulation_value, ',
+										'stock_history.fq_close_price ',
+									'FROM ',
+										'stock_history ',
+									'WHERE ',
+										'stock_history.`code` = %s ',
+									'AND stock_history.fq_close_price IS NOT NULL ',
+									'AND date <= %s ',
+									'ORDER BY ',
+										'date DESC ',
+									'LIMIT 0, ',
+									'%s ',
+								') t ',
+							'ORDER BY ',
+								'date ASC ']), [code,end,diff + 380])
 
 	results = cursor.fetchall()
 	for result in results:
@@ -250,7 +273,14 @@ def reverse(arr):
 
 if __name__ == '__main__':
 	#print(reverse([1,2,3,4,5]))
-	processIncrease('2000-01-01','2017-08-09')
+	processIncrease('2015-08-01','2017-08-09')
+	'''
+	begin = '2017-07-01'
+	end = '2017-08-09'
+	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
+	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
+	print((enddate-begindate).days)
+	'''
 	#processStockIncrease('2016-01-01','2017-08-09','600000','sh')
 	#print(calcPolyfit([1,2,4],[1,2,3],2))
 	#getDataSetX([1,2,3,4,5],5,5)
