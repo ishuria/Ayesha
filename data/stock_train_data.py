@@ -22,164 +22,153 @@ def processStockIncrease(begin,end,code,market):
 	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
 	cursor = conn.cursor()
 
-	stock_history_list = requestStockHistory(begin,end,code)
+	stock_history_list = requestStockHistory(begin,end,code,cursor)
 	for stock_history in stock_history_list:
 		date = stock_history[8]
 
 		if date < begin or date > end:
 			continue
 
-		trade_num = stock_history[2]
-		trade_money = stock_history[3]
-		turnover_rate = stock_history[12]
-
 		#计算inc
-		data_set_x_day = getDataSetX(stock_history_list,date,2)
-		data_set_y_day = getDataSetY(stock_history_list,date,2)
-		inc_day = calcIncrease(data_set_y_day[0],data_set_y_day[len(data_set_y_day)-1])
-
 		data_set_x_30 = getDataSetX(stock_history_list,date,30)
 		data_set_y_30 = getDataSetY(stock_history_list,date,30)
 		inc_30 = None
-		fit_inc_30_1 = None
-		fit_inc_30_2 = None
-		if len(data_set_x_30) == 30 and len(data_set_y_30) == 30:
-			inc_30 = calcIncrease(data_set_y_30[0],data_set_y_30[len(data_set_y_30)-1])
-			fit_inc_30_1 = calcPolyfit(data_set_x_30,data_set_y_30,1)
-			fit_inc_30_2 = calcPolyfit(data_set_x_30,data_set_y_30,2)
 
 		data_set_x_90 = getDataSetX(stock_history_list,date,90)
 		data_set_y_90 = getDataSetY(stock_history_list,date,90)
 		inc_90 = None
-		fit_inc_90_1 = None
-		fit_inc_90_2 = None
-		if len(data_set_x_90) == 90 and len(data_set_y_90) == 90:
-			inc_90 = calcIncrease(data_set_y_90[0],data_set_y_90[len(data_set_y_90)-1])
-			fit_inc_90_1 = calcPolyfit(data_set_x_90,data_set_y_90,1)
-			fit_inc_90_2 = calcPolyfit(data_set_x_90,data_set_y_90,2)
 
 		data_set_x_180 = getDataSetX(stock_history_list,date,180)
 		data_set_y_180 = getDataSetY(stock_history_list,date,180)
 		inc_180 = None
-		fit_inc_180_1 = None
-		fit_inc_180_2 = None
-		if len(data_set_x_180) == 180 and len(data_set_y_180) == 180:
-			inc_180 = calcIncrease(data_set_y_180[0],data_set_y_180[len(data_set_y_180)-1])
-			fit_inc_180_1 = calcPolyfit(data_set_x_180,data_set_y_180,1)
-			fit_inc_180_2 = calcPolyfit(data_set_x_180,data_set_y_180,2)
 
 		data_set_x_360 = getDataSetX(stock_history_list,date,360)
 		data_set_y_360 = getDataSetY(stock_history_list,date,360)
 		inc_360 = None
-		fit_inc_360_1 = None
-		fit_inc_360_2 = None
+
+		if len(data_set_x_30) == 30 and len(data_set_y_30) == 30:
+			inc_30 = calcIncrease(data_set_y_30[0],data_set_y_30[len(data_set_y_30)-1])
+
+		if len(data_set_x_90) == 90 and len(data_set_y_90) == 90:
+			inc_90 = calcIncrease(data_set_y_90[0],data_set_y_90[len(data_set_y_90)-1])
+
+		if len(data_set_x_180) == 180 and len(data_set_y_180) == 180:
+			inc_180 = calcIncrease(data_set_y_180[0],data_set_y_180[len(data_set_y_180)-1])
+
 		if len(data_set_x_360) == 360 and len(data_set_y_360) == 360:
 			inc_360 = calcIncrease(data_set_y_360[0],data_set_y_360[len(data_set_y_360)-1])
-			fit_inc_360_1 = calcPolyfit(data_set_x_360,data_set_y_360,1)
-			fit_inc_360_2 = calcPolyfit(data_set_x_360,data_set_y_360,2)
-
-
-
+		
 		#计算turn_over
 		turn_30 = None
-		turn_set_30 = getDataSetTrun(stock_history_list,date,30)
+		turn_set_30 = []
+
+		trade_money_30 = None
+		trade_money_set_30 = []
+
+		trade_num_30 = None
+		trade_num_set_30 = []
+
+		future_inc_30 = None
+		future_inc_set_30 = []
+
+		getDataSet(stock_history_list,date,30,trade_num_set_30,trade_money_set_30,turn_set_30,future_inc_set_30)
+
 		if len(turn_set_30) == 30:
 			turn_30 = calcAvg(turn_set_30)
 
-
-		turn_90 = None
-		turn_set_90 = getDataSetTrun(stock_history_list,date,90)
-		if len(turn_set_90) == 90:
-			turn_90 = calcAvg(turn_set_90)
-
-
-		turn_180 = None
-		turn_set_180 = getDataSetTrun(stock_history_list,date,180)
-		if len(turn_set_180) == 180:
-			turn_180 = calcAvg(turn_set_180)
-
-
-		turn_360 = None
-		turn_set_360 = getDataSetTrun(stock_history_list,date,360)
-		if len(turn_set_360) == 360:
-			turn_360 = calcAvg(turn_set_360)
-
-
-		#计算trade_money
-		trade_money_30 = None
-		trade_money_set_30 = getDataSetTradeMoney(stock_history_list,date,30)
+		#计算trade_money		
 		if len(trade_money_set_30) == 30:
 			trade_money_30 = calcAvg(trade_money_set_30)
 
-		trade_money_90 = None
-		trade_money_set_90 = getDataSetTradeMoney(stock_history_list,date,90)
-		if len(trade_money_set_90) == 90:
-			trade_money_90 = calcAvg(trade_money_set_90)
-
-
-		trade_money_180 = None
-		trade_money_set_180 = getDataSetTradeMoney(stock_history_list,date,180)
-		if len(trade_money_set_180) == 180:
-			trade_money_180 = calcAvg(trade_money_set_180)
-
-
-		trade_money_360 = None
-		trade_money_set_360 = getDataSetTradeMoney(stock_history_list,date,360)
-		if len(trade_money_set_360) == 360:
-			trade_money_360 = calcAvg(trade_money_set_360)
-
-
-
-
-
 		#计算trade_num
-		trade_num_30 = None
-		trade_num_set_30 = getDataSetTradeNum(stock_history_list,date,30)
 		if len(trade_num_set_30) == 30:
 			trade_num_30 = calcAvg(trade_num_set_30)
 
-		trade_num_90 = None
-		trade_num_set_90 = getDataSetTradeNum(stock_history_list,date,90)
-		if len(trade_num_set_90) == 90:
-			trade_num_90 = calcAvg(trade_num_set_90)
-
-
-		trade_num_180 = None
-		trade_num_set_180 = getDataSetTradeNum(stock_history_list,date,180)
-		if len(trade_num_set_180) == 180:
-			trade_num_180 = calcAvg(trade_num_set_180)
-
-
-		trade_num_360 = None
-		trade_num_set_360 = getDataSetTradeNum(stock_history_list,date,360)
-		if len(trade_num_set_360) == 360:
-			trade_num_360 = calcAvg(trade_num_set_360)
-
-
-
-
-
-
 		#计算future_inc
-		future_inc_30 = None
-		future_inc_set_30 = getDataSetFuture(stock_history_list,date,30)
 		if len(future_inc_set_30) == 30:
 			future_inc_30 = calcIncrease(future_inc_set_30[0],future_inc_set_30[len(future_inc_set_30)-1])
 
+
+		turn_90 = None
+		turn_set_90 = []
+
+		trade_money_90 = None
+		trade_money_set_90 = []
+
+		trade_num_90 = None
+		trade_num_set_90 = []
+
 		future_inc_90 = None
-		future_inc_set_90 = getDataSetFuture(stock_history_list,date,90)
+		future_inc_set_90 = []
+
+		getDataSet(stock_history_list,date,90,trade_num_set_90,trade_money_set_90,turn_set_90,future_inc_set_90)
+
+		if len(turn_set_90) == 90:
+			turn_90 = calcAvg(turn_set_90)
+
+		if len(trade_money_set_90) == 90:
+			trade_money_90 = calcAvg(trade_money_set_90)
+
+		if len(trade_num_set_90) == 90:
+			trade_num_90 = calcAvg(trade_num_set_90)
+		
 		if len(future_inc_set_90) == 90:
 			future_inc_90 = calcIncrease(future_inc_set_90[0],future_inc_set_90[len(future_inc_set_90)-1])
 
 
+		turn_180 = None
+		turn_set_180 = []
+
+		trade_money_180 = None
+		trade_money_set_180 = []
+
+		trade_num_180 = None
+		trade_num_set_180 = []
+
 		future_inc_180 = None
-		future_inc_set_180 = getDataSetFuture(stock_history_list,date,180)
+		future_inc_set_180 = []
+
+		getDataSet(stock_history_list,date,180,trade_num_set_180,trade_money_set_180,turn_set_180,future_inc_set_180)
+
+		if len(turn_set_180) == 180:
+			turn_180 = calcAvg(turn_set_180)
+
+		if len(trade_money_set_180) == 180:
+			trade_money_180 = calcAvg(trade_money_set_180)
+
+		if len(trade_num_set_180) == 180:
+			trade_num_180 = calcAvg(trade_num_set_180)
+
 		if len(future_inc_set_180) == 180:
 			future_inc_180 = calcIncrease(future_inc_set_180[0],future_inc_set_180[len(future_inc_set_180)-1])
 
 
+
+
+
+		turn_360 = None
+		turn_set_360 = []
+
+		trade_money_360 = None
+		trade_money_set_360 = []
+
+		trade_num_360 = None
+		trade_num_set_360 = []
+
 		future_inc_360 = None
-		future_inc_set_360 = getDataSetFuture(stock_history_list,date,360)
+		future_inc_set_360 = []
+
+		getDataSet(stock_history_list,date,360,trade_num_set_360,trade_money_set_360,turn_set_360,future_inc_set_360)
+			
+		if len(turn_set_360) == 360:
+			turn_360 = calcAvg(turn_set_360)
+		
+		if len(trade_money_set_360) == 360:
+			trade_money_360 = calcAvg(trade_money_set_360)
+
+		if len(trade_num_set_360) == 360:
+			trade_num_360 = calcAvg(trade_num_set_360)
+
 		if len(future_inc_set_360) == 360:
 			future_inc_360 = calcIncrease(future_inc_set_360[0],future_inc_set_360[len(future_inc_set_360)-1])
 
@@ -345,25 +334,6 @@ def getDataSetX(stock_history_list,end,peroid):
 				return reverse(data_set)
 	return reverse(data_set)
 
-
-def getDataSetFuture(stock_history_list,end,peroid):
-	data_set = []
-	start_collect = False
-	for i in range(len(stock_history_list)):
-		date = stock_history_list[i][8]
-		if date == end:
-			start_collect = True
-		if start_collect:
-			data_set.append(float(stock_history_list[i][15]))
-			peroid = peroid - 1
-			'''
-			修改跳出条件
-			'''
-			if peroid <= 0:
-				return reverse(data_set)
-	return reverse(data_set)
-
-
 def getDataSetY(stock_history_list,end,peroid):
 	data_set = []
 	start_collect = False
@@ -381,61 +351,25 @@ def getDataSetY(stock_history_list,end,peroid):
 				return reverse(data_set)
 	return reverse(data_set)
 
-
-def getDataSetTrun(stock_history_list,end,peroid):
-	data_set = []
+def getDataSet(stock_history_list,end,peroid,trade_num,trade_money,turn,future):
 	start_collect = False
 	for i in range(len(stock_history_list)-1,-1,-1):
 		date = stock_history_list[i][8]
 		if date == end:
 			start_collect = True
 		if start_collect:
-			data_set.append(float(stock_history_list[i][12]))
+			trade_num.append(float(stock_history_list[i][2]))
+			trade_money.append(float(stock_history_list[i][3]))
+			turn.append(float(stock_history_list[i][12]))
+			future.append(float(stock_history_list[i][15]))
 			peroid = peroid - 1
 			'''
 			修改跳出条件
 			'''
 			if peroid <= 0:
-				return reverse(data_set)
-	return reverse(data_set)
+				break
 
-def getDataSetTradeMoney(stock_history_list,end,peroid):
-	data_set = []
-	start_collect = False
-	for i in range(len(stock_history_list)-1,-1,-1):
-		date = stock_history_list[i][8]
-		if date == end:
-			start_collect = True
-		if start_collect:
-			data_set.append(float(stock_history_list[i][3]))
-			peroid = peroid - 1
-			'''
-			修改跳出条件
-			'''
-			if peroid <= 0:
-				return reverse(data_set)
-	return reverse(data_set)
-
-def getDataSetTradeNum(stock_history_list,end,peroid):
-	data_set = []
-	start_collect = False
-	for i in range(len(stock_history_list)-1,-1,-1):
-		date = stock_history_list[i][8]
-		if date == end:
-			start_collect = True
-		if start_collect:
-			data_set.append(float(stock_history_list[i][2]))
-			peroid = peroid - 1
-			'''
-			修改跳出条件
-			'''
-			if peroid <= 0:
-				return reverse(data_set)
-	return reverse(data_set)
-
-def requestStockHistory(begin,end,code):
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
+def requestStockHistory(begin,end,code,cursor):
 
 	stock_history_list = []
 
@@ -483,9 +417,6 @@ def requestStockHistory(begin,end,code):
 	for result in results:
 		stock_history_list.append(result)
 
-	conn.commit()
-	cursor.close()
-	conn.close()
 	return stock_history_list
 
 
@@ -512,7 +443,7 @@ def reverse(arr):
 
 if __name__ == '__main__':
 	#print(reverse([1,2,3,4,5]))
-	processIncrease('2015-08-01','2017-08-09')
+	processIncrease('2000-01-01','2017-08-09')
 	'''
 	begin = '2017-07-01'
 	end = '2017-08-09'
