@@ -23,6 +23,7 @@ def processStockIncrease(begin,end,code,market):
 	cursor = conn.cursor()
 
 	stock_history_list = requestStockHistory(begin,end,code,cursor)
+	stock_future_list = requestStockFuture(begin,end,code,cursor)
 	for stock_history in stock_history_list:
 		date = stock_history[8]
 
@@ -68,10 +69,7 @@ def processStockIncrease(begin,end,code,market):
 		trade_num_30 = None
 		trade_num_set_30 = []
 
-		future_inc_30 = None
-		future_inc_set_30 = []
-
-		getDataSet(stock_history_list,date,30,trade_num_set_30,trade_money_set_30,turn_set_30,future_inc_set_30)
+		getDataSet(stock_history_list,date,30,trade_num_set_30,trade_money_set_30,turn_set_30)
 
 		if len(turn_set_30) == 30:
 			turn_30 = calcAvg(turn_set_30)
@@ -84,9 +82,6 @@ def processStockIncrease(begin,end,code,market):
 		if len(trade_num_set_30) == 30:
 			trade_num_30 = calcAvg(trade_num_set_30)
 
-		#计算future_inc
-		if len(future_inc_set_30) == 30:
-			future_inc_30 = calcIncrease(future_inc_set_30[0],future_inc_set_30[len(future_inc_set_30)-1])
 
 
 		turn_90 = None
@@ -98,10 +93,7 @@ def processStockIncrease(begin,end,code,market):
 		trade_num_90 = None
 		trade_num_set_90 = []
 
-		future_inc_90 = None
-		future_inc_set_90 = []
-
-		getDataSet(stock_history_list,date,90,trade_num_set_90,trade_money_set_90,turn_set_90,future_inc_set_90)
+		getDataSet(stock_history_list,date,90,trade_num_set_90,trade_money_set_90,turn_set_90)
 
 		if len(turn_set_90) == 90:
 			turn_90 = calcAvg(turn_set_90)
@@ -112,8 +104,7 @@ def processStockIncrease(begin,end,code,market):
 		if len(trade_num_set_90) == 90:
 			trade_num_90 = calcAvg(trade_num_set_90)
 		
-		if len(future_inc_set_90) == 90:
-			future_inc_90 = calcIncrease(future_inc_set_90[0],future_inc_set_90[len(future_inc_set_90)-1])
+
 
 
 		turn_180 = None
@@ -125,10 +116,7 @@ def processStockIncrease(begin,end,code,market):
 		trade_num_180 = None
 		trade_num_set_180 = []
 
-		future_inc_180 = None
-		future_inc_set_180 = []
-
-		getDataSet(stock_history_list,date,180,trade_num_set_180,trade_money_set_180,turn_set_180,future_inc_set_180)
+		getDataSet(stock_history_list,date,180,trade_num_set_180,trade_money_set_180,turn_set_180)
 
 		if len(turn_set_180) == 180:
 			turn_180 = calcAvg(turn_set_180)
@@ -139,8 +127,7 @@ def processStockIncrease(begin,end,code,market):
 		if len(trade_num_set_180) == 180:
 			trade_num_180 = calcAvg(trade_num_set_180)
 
-		if len(future_inc_set_180) == 180:
-			future_inc_180 = calcIncrease(future_inc_set_180[0],future_inc_set_180[len(future_inc_set_180)-1])
+
 
 
 
@@ -155,10 +142,7 @@ def processStockIncrease(begin,end,code,market):
 		trade_num_360 = None
 		trade_num_set_360 = []
 
-		future_inc_360 = None
-		future_inc_set_360 = []
-
-		getDataSet(stock_history_list,date,360,trade_num_set_360,trade_money_set_360,turn_set_360,future_inc_set_360)
+		getDataSet(stock_history_list,date,360,trade_num_set_360,trade_money_set_360,turn_set_360)
 			
 		if len(turn_set_360) == 360:
 			turn_360 = calcAvg(turn_set_360)
@@ -169,10 +153,30 @@ def processStockIncrease(begin,end,code,market):
 		if len(trade_num_set_360) == 360:
 			trade_num_360 = calcAvg(trade_num_set_360)
 
+
+		future_inc_30 = None
+		future_inc_set_30 = []
+		getFutureDataSet(stock_future_list,date,30,future_inc_set_30)
+		if len(future_inc_set_30) == 30:
+			future_inc_30 = calcIncrease(future_inc_set_30[0],future_inc_set_30[len(future_inc_set_30)-1])
+
+		future_inc_90 = None
+		future_inc_set_90 = []
+		getFutureDataSet(stock_future_list,date,90,future_inc_set_90)
+		if len(future_inc_set_90) == 90:
+			future_inc_90 = calcIncrease(future_inc_set_90[0],future_inc_set_90[len(future_inc_set_90)-1])
+
+		future_inc_180 = None
+		future_inc_set_180 = []
+		getFutureDataSet(stock_future_list,date,180,future_inc_set_180)
+		if len(future_inc_set_180) == 180:
+			future_inc_180 = calcIncrease(future_inc_set_180[0],future_inc_set_180[len(future_inc_set_180)-1])
+
+		future_inc_360 = None
+		future_inc_set_360 = []
+		getFutureDataSet(stock_future_list,date,360,future_inc_set_360)
 		if len(future_inc_set_360) == 360:
 			future_inc_360 = calcIncrease(future_inc_set_360[0],future_inc_set_360[len(future_inc_set_360)-1])
-
-
 
 
 		cursor.execute(''.join(['SELECT count(1)', 
@@ -351,7 +355,7 @@ def getDataSetY(stock_history_list,end,peroid):
 				return reverse(data_set)
 	return reverse(data_set)
 
-def getDataSet(stock_history_list,end,peroid,trade_num,trade_money,turn,future):
+def getDataSet(stock_history_list,end,peroid,trade_num,trade_money,turn):
 	start_collect = False
 	for i in range(len(stock_history_list)-1,-1,-1):
 		date = stock_history_list[i][8]
@@ -361,6 +365,21 @@ def getDataSet(stock_history_list,end,peroid,trade_num,trade_money,turn,future):
 			trade_num.append(float(stock_history_list[i][2]))
 			trade_money.append(float(stock_history_list[i][3]))
 			turn.append(float(stock_history_list[i][12]))
+			peroid = peroid - 1
+			'''
+			修改跳出条件
+			'''
+			if peroid <= 0:
+				break
+
+
+def getFutureDataSet(stock_history_list,end,peroid,future):
+	start_collect = False
+	for i in range(len(stock_history_list)-1,-1,-1):
+		date = stock_history_list[i][8]
+		if date == end:
+			start_collect = True
+		if start_collect:
 			future.append(float(stock_history_list[i][15]))
 			peroid = peroid - 1
 			'''
@@ -370,13 +389,11 @@ def getDataSet(stock_history_list,end,peroid,trade_num,trade_money,turn,future):
 				break
 
 def requestStockHistory(begin,end,code,cursor):
-
 	stock_history_list = []
 
 	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
 	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
 	diff = (enddate-begindate).days
-
 
 	cursor.execute(''.join(['SELECT ',
 								'* ',
@@ -416,8 +433,56 @@ def requestStockHistory(begin,end,code,cursor):
 	results = cursor.fetchall()
 	for result in results:
 		stock_history_list.append(result)
-
 	return stock_history_list
+
+
+
+def requestStockFuture(begin,end,code,cursor):
+	stock_future_list = []
+
+	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
+	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
+	diff = (enddate-begindate).days
+
+	cursor.execute(''.join(['SELECT ',
+								'* ',
+							'FROM ',
+								'( ',
+									'SELECT ',
+										'stock_history.min_price, ',
+										'stock_history.market, ',
+										'stock_history.trade_num, ',
+										'stock_history.trade_money, ',
+										'stock_history.close_price, ',
+										'stock_history.open_price, ',
+										'stock_history.`code`, ',
+										'stock_history.max_price, ',
+										'stock_history.date, ',
+										'stock_history.last_close_price, ',
+										'stock_history.increase, ',
+										'stock_history.increase_rate, ',
+										'stock_history.turnover_rate, ',
+										'stock_history.total_value, ',
+										'stock_history.circulation_value, ',
+										'stock_history.fq_close_price ',
+									'FROM ',
+										'stock_history ',
+									'WHERE ',
+										'stock_history.`code` = %s ',
+									'AND stock_history.fq_close_price IS NOT NULL ',
+									'AND date >= %s ',
+									'ORDER BY ',
+										'date ASC ',
+									'LIMIT 0, ',
+									'%s ',
+								') t ',
+							'ORDER BY ',
+								'date DESC ']), [code,begin,diff + 380])
+
+	results = cursor.fetchall()
+	for result in results:
+		stock_future_list.append(result)
+	return stock_future_list
 
 
 def getCodeList(market):

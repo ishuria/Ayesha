@@ -6,7 +6,7 @@ import config
 import stock_sql
 
 #入参维度
-INPUT_NODE = 15
+INPUT_NODE = 16
 #出参维度
 OUTPUT_NODE = 4
 
@@ -96,11 +96,13 @@ def train():
 		for market in MARKETS:
 				code_list = getCodeList(market)
 				for code in code_list:
-					train_data_list = []
-					train_result_list = []
 					print(code + ',validating...')
 					read_train_data(VALIDATION_YEAR,code,cursor,validation_data_list,validation_result_list)
+					if len(validation_data_list) >= 10000 or len(validation_result_list) >= 10000:
+						break
 
+
+		#print(validation_result_list)
 		validate_feed = {x:validation_data_list,y_:validation_result_list}
 
 		#test_feed = {x:mnist.test.images, y_:mnist.test.labels}
@@ -108,22 +110,28 @@ def train():
 		current_year = LEARNING_YEAR_START
 		#每年
 		while current_year <= LEARNING_YEAR_END:
-			current_year = str(int(current_year) + 1)
+			
 			#每个市场
 			for market in MARKETS:
 				code_list = getCodeList(market)
 				for code in code_list:
 					train_data_list = []
 					train_result_list = []
-					if len(train_data_list) == 0 or len(train_result_list) == 0:
-						continue
+					
 
 					read_train_data(current_year,code,cursor,train_data_list,train_result_list)
+					if len(train_data_list) == 0 or len(train_result_list) == 0:
+						continue
 					print(code + '  ' + current_year)
+
+					#print(train_data_list)
+
+					#print(train_result_list)
 
 					sess.run(train_op, feed_dict={x:train_data_list,y_:train_result_list})
 			validate_acc = sess.run(accuracy, feed_dict=validate_feed)
 			print('After ' + current_year + ' training, validation accuracy using average model is %g' % (validate_acc))
+			current_year = str(int(current_year) + 1)
 
 		'''
 		for i in range(TRAINING_STEPS):
@@ -246,26 +254,34 @@ def read_train_data(year,code,cursor,train_data_list,train_result_list):
 		if result[14] == None:
 			continue
 		train_data.append(result[14])
-		train_data_list.append(train_data)
-
-
-		train_result = []
 
 		if result[15] == None:
 			continue
-		train_result.append(1 if result[15] > 00.5 else 0)
+		train_data.append(result[15])
+		train_data_list.append(train_data)
 
+
+
+
+
+
+		train_result = []
+		
 		if result[16] == None:
 			continue
-		train_result.append(1 if result[16] > 00.5 else 0)
+		train_result.append(result[16])
 
 		if result[17] == None:
 			continue
-		train_result.append(1 if result[17] > 00.5 else 0)
+		train_result.append(result[17])
 
 		if result[18] == None:
 			continue
-		train_result.append(1 if result[18] > 00.5 else 0)
+		train_result.append(result[18])
+		
+		if result[19] == None:
+			continue
+		train_result.append(result[19])
 		train_result_list.append(train_result)
 	return train_data_list
 
