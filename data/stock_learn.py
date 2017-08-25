@@ -26,19 +26,19 @@ MOVING_AVERAGE_DECAY = 0.99
 #学习开始年份
 LEARNING_YEAR_START = '2010'
 #学习结束年份
-LEARNING_YEAR_END = '2015'
+LEARNING_YEAR_END = '2014'
 #验证年份
-VALIDATION_YEAR = '2016'
+VALIDATION_YEAR = '2015'
 #市场
 MARKETS = ['sh','sz']
 
 
 def inference(input_tensor, avg_class, weights1, biases1, weights2, biases2):
 	if avg_class == None:
-		layer1 = tf.nn.relu(tf.matmul(input_tensor, weights1) + biases1)
+		layer1 = tf.nn.softplus(tf.matmul(input_tensor, weights1) + biases1)
 		return tf.matmul(layer1, weights2) + biases2
 	else:
-		layer1 = tf.nn.relu(tf.matmul(input_tensor, avg_class.average(weights1)) + avg_class.average(biases1))
+		layer1 = tf.nn.softplus(tf.matmul(input_tensor, avg_class.average(weights1)) + avg_class.average(biases1))
 		return tf.matmul(layer1, avg_class.average(weights2)) + avg_class.average(biases2)
 
 def train():
@@ -78,7 +78,24 @@ def train():
 	with tf.control_dependencies([train_step, variable_averages_op]):
 		train_op = tf.no_op(name='train')
 
-	correct_prediction = tf.equal(tf.argmax(average_y, 1), tf.argmax(y_, 1))
+	#correct_prediction = tf.equal(tf.argmax(average_y, 1), tf.argmax(y_, 1))
+
+	
+	#误差在5%以内，认为成功
+	abs_diff = tf.abs(tf.subtract(tf.Print(average_y,[average_y],summarize=100), tf.Print(y_,[y_],summarize=100), name=None))
+	percent_diff = tf.div(abs_diff,y_)
+
+	correct_prediction = tf.div(tf.add(tf.sign(tf.subtract(percent_diff,0.5)),1),2)
+
+
+	'''
+	tf.Print(average_y,[average_y])
+	reduce_sum1 = tf.argmax(tf.Print(average_y,[average_y],summarize=100),1)
+	reduce_sum2 = tf.argmax(tf.Print(y_,[y_]),1)
+	'''
+	
+
+	#correct_prediction = tf.equal(reduce_sum1, reduce_sum2)
 
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -258,7 +275,7 @@ def read_train_data(year,code,cursor,train_data_list,train_result_list):
 		if result[15] == None:
 			continue
 		train_data.append(result[15])
-		train_data_list.append(train_data)
+		
 
 
 
@@ -266,7 +283,6 @@ def read_train_data(year,code,cursor,train_data_list,train_result_list):
 
 
 		train_result = []
-		
 		if result[16] == None:
 			continue
 		train_result.append(result[16])
@@ -282,7 +298,10 @@ def read_train_data(year,code,cursor,train_data_list,train_result_list):
 		if result[19] == None:
 			continue
 		train_result.append(result[19])
+
 		train_result_list.append(train_result)
+		train_data_list.append(train_data)
+
 	return train_data_list
 
 def getCodeList(market):
