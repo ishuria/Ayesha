@@ -79,7 +79,6 @@ def train():
 		train_op = tf.no_op(name='train')
 
 	#correct_prediction = tf.equal(tf.argmax(average_y, 1), tf.argmax(y_, 1))
-
 	
 	#误差在5%以内，认为成功
 	abs_diff = tf.abs(tf.subtract(tf.Print(average_y,[average_y],summarize=100), tf.Print(y_,[y_],summarize=100), name=None))

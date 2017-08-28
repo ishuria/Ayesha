@@ -155,28 +155,49 @@ def processStockIncrease(begin,end,code,market):
 
 
 		future_inc_30 = None
+		future_price_30 = None
 		future_inc_set_30 = []
 		getFutureDataSet(stock_future_list,date,30,future_inc_set_30)
 		if len(future_inc_set_30) == 30:
 			future_inc_30 = calcIncrease(future_inc_set_30[0],future_inc_set_30[len(future_inc_set_30)-1])
+			future_price_30 = future_inc_set_30[len(future_inc_set_30)-1]
 
 		future_inc_90 = None
+		future_price_90 = None
 		future_inc_set_90 = []
 		getFutureDataSet(stock_future_list,date,90,future_inc_set_90)
 		if len(future_inc_set_90) == 90:
 			future_inc_90 = calcIncrease(future_inc_set_90[0],future_inc_set_90[len(future_inc_set_90)-1])
+			future_price_90 = future_inc_set_90[len(future_inc_set_90)-1]
 
 		future_inc_180 = None
+		future_price_180 = None
 		future_inc_set_180 = []
 		getFutureDataSet(stock_future_list,date,180,future_inc_set_180)
 		if len(future_inc_set_180) == 180:
 			future_inc_180 = calcIncrease(future_inc_set_180[0],future_inc_set_180[len(future_inc_set_180)-1])
+			future_price_180 = future_inc_set_180[len(future_inc_set_180)-1]
 
 		future_inc_360 = None
+		future_price_360 = None
 		future_inc_set_360 = []
 		getFutureDataSet(stock_future_list,date,360,future_inc_set_360)
 		if len(future_inc_set_360) == 360:
 			future_inc_360 = calcIncrease(future_inc_set_360[0],future_inc_set_360[len(future_inc_set_360)-1])
+			future_price_360 = future_inc_set_360[len(future_inc_set_360)-1]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 		cursor.execute(''.join(['SELECT count(1)', 
@@ -209,7 +230,11 @@ def processStockIncrease(begin,end,code,market):
 										'stock_train_data.future_inc_30 = %s, ',
 										'stock_train_data.future_inc_90 = %s, ',
 										'stock_train_data.future_inc_180 = %s, ',
-										'stock_train_data.future_inc_360 = %s ',
+										'stock_train_data.future_inc_360 = %s, ',
+										'stock_train_data.future_price_30 = %s, ',
+										'stock_train_data.future_price_90 = %s, ',
+										'stock_train_data.future_price_180 = %s, ',
+										'stock_train_data.future_price_360 = %s ',
 									'WHERE ',
 										'stock_train_data.`code` = %s AND stock_train_data.date= %s ']), 
 									[inc_30,
@@ -232,6 +257,10 @@ def processStockIncrease(begin,end,code,market):
 									future_inc_90,
 									future_inc_180,
 									future_inc_360,
+									future_price_30,
+									future_price_90,
+									future_price_180,
+									future_price_360,
 									code, date])
 
 
@@ -260,7 +289,11 @@ def processStockIncrease(begin,end,code,market):
 										'stock_train_data.future_inc_30, ',
 										'stock_train_data.future_inc_90, ',
 										'stock_train_data.future_inc_180, ',
-										'stock_train_data.future_inc_360 ',
+										'stock_train_data.future_inc_360, ',
+										'stock_train_data.future_price_30, ',
+										'stock_train_data.future_price_90, ',
+										'stock_train_data.future_price_180, ',
+										'stock_train_data.future_price_360 ',
 									') ',
 									'VALUES ',
 										'( ',
@@ -286,7 +319,11 @@ def processStockIncrease(begin,end,code,market):
 									future_inc_30,
 									future_inc_90,
 									future_inc_180,
-									future_inc_360])
+									future_inc_360,
+									future_price_30,
+									future_price_90,
+									future_price_180,
+									future_price_360])
 
 
 	conn.commit()
@@ -508,7 +545,7 @@ def reverse(arr):
 
 if __name__ == '__main__':
 	#print(reverse([1,2,3,4,5]))
-	processIncrease('2000-01-01','2017-08-09')
+	processIncrease('2010-01-01','2017-08-09')
 	'''
 	begin = '2017-07-01'
 	end = '2017-08-09'
