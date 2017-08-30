@@ -1,0 +1,1 @@
+nohup python stock_daily_task.py 2017-08-11 > daily.2017-08-11.log 2>&1

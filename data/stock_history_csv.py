@@ -10,33 +10,19 @@ import datetime
 host = 'http://quotes.money.163.com/service/chddata.html'
 markets = ['sh','sz']
 
+conn = None
+cursor = None
+
+
 def processCSV(file_name,market):
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
+	global conn
+	global cursor
 	with open(file_name) as f:
 		lines = f.readlines()
 		for line in islice(lines, 1, None): 
-			saveToDB(cursor,line,market)
+			saveToDB(line,market)
 	conn.commit()
-	cursor.close()
-	conn.close()
-
-def processHistoryData(begin,end):
-	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
-	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
-
-	begin = begindate.strftime('%Y%m%d')
-	end = enddate.strftime('%Y%m%d')
-	for market in markets:
-		code_list = getCodeList(market)
-		line_num = 0
-		for code in code_list:
-			if market == 'sh':
-				requestHistoryData(begin,end,code,0)
-			else:
-				requestHistoryData(begin,end,code,1)
-			processCSV(code + '.csv',market)
-			os.remove(code + '.csv')
+	
 
 def trimValue(value):
 	value = value.replace('\'','')
@@ -44,7 +30,9 @@ def trimValue(value):
 		value = None
 	return value
 
-def saveToDB(cursor,stock_line,market):
+def saveToDB(stock_line,market):
+	global conn
+	global cursor
 	contents = stock_line.split(',')
 
 	#日期0,股票代码1,名称2,收盘价3,最高价4,最低价5,开盘价6,前收盘7,涨跌额8,涨跌幅9,换手率10,成交量11,成交金额12,总市值13,流通市值14,成交笔数15
@@ -152,45 +140,49 @@ def saveToDB(cursor,stock_line,market):
 	
 
 def getCodeList(market):
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
-
+	global conn
+	global cursor
 	stock_list = []
 	cursor.execute(stock_sql.stock_market_select_sql , [market])
 	results = cursor.fetchall()
 	for result in results:
 		stock_list.append(result[6])
-
-	conn.commit()
-	cursor.close()
-	conn.close()
 	return stock_list
 
 def requestHistoryData(begin,end,code,market_code):
 	url = host + '?code=' + bytes(market_code) + bytes(code) + '&start=' + begin + '&end=' + end 
-	print(url)
 	f = urllib2.urlopen(url) 
 	data = f.read() 
 	with open(code + '.csv', "w") as file:     
 	    file.write(data)
 
-if __name__ == '__main__':
-	processHistoryData('2017-08-14','2017-08-14')
-	#print '{:.4f}'.format(float('1.83549222401e+12'))
-	#print(float(None))
 
-	'''
-	begin = '2017-01-01'
-	end = '2017-07-31'
+
+def processHistoryData(begin,end):
+	#开启数据库连接
+	global conn
+	global cursor
+	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
+	cursor = conn.cursor()
 
 	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
 	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
 
 	begin = begindate.strftime('%Y%m%d')
 	end = enddate.strftime('%Y%m%d')
+	for market in markets:
+		code_list = getCodeList(market)
+		line_num = 0
+		for code in code_list:
+			if market == 'sh':
+				requestHistoryData(begin,end,code,0)
+			else:
+				requestHistoryData(begin,end,code,1)
+			processCSV(code + '.csv',market)
+			os.remove(code + '.csv')
+	#关闭数据库连接
+	cursor.close()
+	conn.close()
 
-	print(begin)
-	print(end)
-	'''
-
-
+if __name__ == '__main__':
+	processHistoryData('2017-08-14','2017-08-14')

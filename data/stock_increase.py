@@ -10,21 +10,28 @@ import datetime
 
 markets = ['sh','sz']
 
-
+conn = None
+cursor = None
 
 def processIncrease(begin,end):
+	global conn
+	global cursor
+	#开启数据库连接
+	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
+	cursor = conn.cursor()
 	for market in markets:
 		code_list = getCodeList(market)
 		line_num = 0  
 		for code in code_list:
 			processStockIncrease(begin,end,code,market)
+	cursor.close()
+	conn.close()
 
 
 
 def processStockIncrease(begin,end,code,market):
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
-
+	global conn
+	global cursor
 	stock_history_list = requestStockHistory(begin,end,code)
 	for stock_history in stock_history_list:
 		date = stock_history[8]
@@ -136,8 +143,6 @@ def processStockIncrease(begin,end,code,market):
 
 
 	conn.commit()
-	cursor.close()
-	conn.close()
 	return None
 
 def calcIncrease(prev_value,curr_value):
@@ -195,9 +200,8 @@ def getDataSetY(stock_history_list,end,peroid):
 	return reverse(data_set)
 
 def requestStockHistory(begin,end,code):
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
-
+	global conn
+	global cursor
 	stock_history_list = []
 
 	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
@@ -244,15 +248,12 @@ def requestStockHistory(begin,end,code):
 	for result in results:
 		stock_history_list.append(result)
 
-	conn.commit()
-	cursor.close()
-	conn.close()
 	return stock_history_list
 
 
 def getCodeList(market):
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
+	global conn
+	global cursor
 
 	stock_list = []
 	cursor.execute(stock_sql.stock_market_select_sql , [market])
@@ -261,8 +262,6 @@ def getCodeList(market):
 		stock_list.append(result[6])
 
 	conn.commit()
-	cursor.close()
-	conn.close()
 	return stock_list
 
 def reverse(arr):
@@ -272,15 +271,4 @@ def reverse(arr):
 	return reverse_arr
 
 if __name__ == '__main__':
-	#print(reverse([1,2,3,4,5]))
 	processIncrease('2015-08-01','2017-08-09')
-	'''
-	begin = '2017-07-01'
-	end = '2017-08-09'
-	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
-	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
-	print((enddate-begindate).days)
-	'''
-	#processStockIncrease('2016-01-01','2017-08-09','600000','sh')
-	#print(calcPolyfit([1,2,4],[1,2,3],2))
-	#getDataSetX([1,2,3,4,5],5,5)

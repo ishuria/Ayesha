@@ -10,20 +10,31 @@ import datetime
 
 markets = ['sh','sz']
 
+conn = None
+cursor = None
+
 
 def processIncrease(begin,end):
+	global conn
+	global cursor
+	#开启数据库连接
+	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
+	cursor = conn.cursor()
+
 	for market in markets:
 		code_list = getCodeList(market)
 		line_num = 0  
 		for code in code_list:
 			processStockIncrease(begin,end,code,market)
 
-def processStockIncrease(begin,end,code,market):
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
+	cursor.close()
+	conn.close()
 
-	stock_history_list = requestStockHistory(begin,end,code,cursor)
-	stock_future_list = requestStockFuture(begin,end,code,cursor)
+def processStockIncrease(begin,end,code,market):
+	global conn
+	global cursor
+	stock_history_list = requestStockHistory(begin,end,code)
+	stock_future_list = requestStockFuture(begin,end,code)
 	for stock_history in stock_history_list:
 		date = stock_history[8]
 
@@ -82,8 +93,6 @@ def processStockIncrease(begin,end,code,market):
 		if len(trade_num_set_30) == 30:
 			trade_num_30 = calcAvg(trade_num_set_30)
 
-
-
 		turn_90 = None
 		turn_set_90 = []
 
@@ -104,9 +113,6 @@ def processStockIncrease(begin,end,code,market):
 		if len(trade_num_set_90) == 90:
 			trade_num_90 = calcAvg(trade_num_set_90)
 		
-
-
-
 		turn_180 = None
 		turn_set_180 = []
 
@@ -126,12 +132,6 @@ def processStockIncrease(begin,end,code,market):
 
 		if len(trade_num_set_180) == 180:
 			trade_num_180 = calcAvg(trade_num_set_180)
-
-
-
-
-
-
 
 		turn_360 = None
 		turn_set_360 = []
@@ -186,20 +186,6 @@ def processStockIncrease(begin,end,code,market):
 			future_inc_360 = calcIncrease(future_inc_set_360[0],future_inc_set_360[len(future_inc_set_360)-1])
 			future_price_360 = future_inc_set_360[len(future_inc_set_360)-1]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 		cursor.execute(''.join(['SELECT count(1)', 
 							'FROM ',
 								'stock_train_data ',
@@ -209,7 +195,7 @@ def processStockIncrease(begin,end,code,market):
 		count = result[0]
 		#如果有记录，更新
 		if count == 1:
-			print('update increase code = ' + code + ',date = ' + date)
+			print('update train code = ' + code + ',date = ' + date)
 			cursor.execute(''.join(['UPDATE stock_train_data set ',
 										'stock_train_data.inc_30 = %s, ',
 										'stock_train_data.inc_90 = %s, ',
@@ -266,7 +252,7 @@ def processStockIncrease(begin,end,code,market):
 
 		#否则新增数据
 		else:
-			print('insert increase code = ' + code + ',date = ' + date)
+			print('insert train code = ' + code + ',date = ' + date)
 			cursor.execute(''.join(['INSERT INTO stock_train_data ( ',
 										'stock_train_data.date, ',
 										'stock_train_data.`code`, ',
@@ -297,7 +283,7 @@ def processStockIncrease(begin,end,code,market):
 									') ',
 									'VALUES ',
 										'( ',
-											'%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s,%s ,%s,%s ,%s,%s ,%s,%s,%s,%s,%s,%s,%s,%s ',
+											'%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s ,%s,%s ,%s,%s ,%s,%s ,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s ',
 										')']), 
 									[date,code,
 									inc_30,
@@ -327,8 +313,6 @@ def processStockIncrease(begin,end,code,market):
 
 
 	conn.commit()
-	cursor.close()
-	conn.close()
 	return None
 
 def calcIncrease(prev_value,curr_value):
@@ -425,7 +409,9 @@ def getFutureDataSet(stock_history_list,end,peroid,future):
 			if peroid <= 0:
 				break
 
-def requestStockHistory(begin,end,code,cursor):
+def requestStockHistory(begin,end,code):
+	global conn
+	global cursor
 	stock_history_list = []
 
 	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
@@ -474,7 +460,9 @@ def requestStockHistory(begin,end,code,cursor):
 
 
 
-def requestStockFuture(begin,end,code,cursor):
+def requestStockFuture(begin,end,code):
+	global conn
+	global cursor
 	stock_future_list = []
 
 	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
@@ -523,18 +511,13 @@ def requestStockFuture(begin,end,code,cursor):
 
 
 def getCodeList(market):
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
-
+	global conn
+	global cursor
 	stock_list = []
 	cursor.execute(stock_sql.stock_market_select_sql , [market])
 	results = cursor.fetchall()
 	for result in results:
 		stock_list.append(result[6])
-
-	conn.commit()
-	cursor.close()
-	conn.close()
 	return stock_list
 
 def reverse(arr):
@@ -544,15 +527,4 @@ def reverse(arr):
 	return reverse_arr
 
 if __name__ == '__main__':
-	#print(reverse([1,2,3,4,5]))
-	processIncrease('2010-01-01','2017-08-09')
-	'''
-	begin = '2017-07-01'
-	end = '2017-08-09'
-	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
-	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
-	print((enddate-begindate).days)
-	'''
-	#processStockIncrease('2016-01-01','2017-08-09','600000','sh')
-	#print(calcPolyfit([1,2,4],[1,2,3],2))
-	#getDataSetX([1,2,3,4,5],5,5)
+	processIncrease('2017-08-10','2017-08-10')

@@ -18,7 +18,7 @@ MARKETS = ['sh','sz']
 
 
 #定义常量
-rnn_unit=10       #hidden layer units
+rnn_unit=10
 input_size=6
 output_size=1
 #学习率
@@ -56,7 +56,8 @@ def get_train_data(code,batch_size=60,time_step=20,train_begin_year='2010',train
             'WHERE ',
             '    t.date >= %s ',
             'AND t.date <= %s ',
-            'AND t.`code` = %s '
+            'AND t.`code` = %s ',
+            'ORDER BY t.date asc '
         ]) , [date_begin,date_end,code])
     results = cursor.fetchall()
     for result in results:
@@ -161,6 +162,7 @@ def get_test_data(code,time_step=20,train_begin_year='2010',train_end_year='2014
         stock_history.append(float(result[4]))
         #circulation_value:14
         stock_history.append(float(result[5]))
+        stock_history.append(float(result[8]))
         stock_history_list.append(stock_history)
 
 
@@ -179,11 +181,11 @@ def get_test_data(code,time_step=20,train_begin_year='2010',train_end_year='2014
     test_x,test_y=[],[]  
     for i in range(size-1):
        x=normalized_test_data[i*time_step:(i+1)*time_step,:6]
-       y=normalized_test_data[i*time_step:(i+1)*time_step,0]
+       y=normalized_test_data[i*time_step:(i+1)*time_step,6]
        test_x.append(x.tolist())
        test_y.extend(y)
     test_x.append((normalized_test_data[(i+1)*time_step:,:6]).tolist())
-    test_y.extend((normalized_test_data[(i+1)*time_step:,0]).tolist())
+    test_y.extend((normalized_test_data[(i+1)*time_step:,6]).tolist())
     return mean,std,test_x,test_y
 
 
@@ -259,18 +261,23 @@ def prediction(code,time_step=20,train_begin_year='2010',train_end_year='2014'):
         saver.restore(sess, module_file)
         test_predict=[]
         for step in range(len(test_x)-1):
-          prob=sess.run(pred,feed_dict={X:[test_x[step]]})
-          predict=prob.reshape((-1))
-          test_predict.extend(predict)
+            prob=sess.run(pred,feed_dict={X:[test_x[step]]})
+            predict=prob.reshape((-1))
+            test_predict.extend(predict)
         test_y=np.array(test_y)*std[2]+mean[2]
         test_predict=np.array(test_predict)*float(std[2])+float(mean[2])
         acc=np.average(np.abs(test_predict-test_y[:len(test_predict)])/test_y[:len(test_predict)])  #偏差
+
+        np.savetxt("test_y.txt", test_y);
+        np.savetxt("test_predict.txt", test_predict);
+
+        print(acc)
         #以折线图表示结果
-        plt.figure()
-        plt.plot(list(range(len(test_predict))), test_predict, color='b')
-        plt.plot(list(range(len(test_y))), test_y,  color='r')
+        #plt.figure()
+        #plt.plot(list(range(len(test_predict))), test_predict, color='b')
+        #plt.plot(list(range(len(test_y))), test_y,  color='r')
         #plt.show()
-        plt.savefig('/home/ayesha/data/plot1.png', format='png')
+        #plt.savefig('/home/ayesha/data/plot1.png', format='png')
 
 #prediction()
 
@@ -278,5 +285,5 @@ def prediction(code,time_step=20,train_begin_year='2010',train_end_year='2014'):
 
 
 if __name__ == '__main__':
-    train_lstm('600000',80,15,'2010','2014')
-    #prediction('600000',15,'2010','2014')
+    #train_lstm('600000',80,15,'2010','2014')
+    prediction('600004',15,'2010','2014')
