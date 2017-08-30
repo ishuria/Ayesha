@@ -34,9 +34,18 @@ def processStockIncrease(begin,end,code,market):
 	global conn
 	global cursor
 	stock_history_list = requestStockHistory(begin,end,code)
+
 	stock_future_list = requestStockFuture(begin,end,code)
+
+
+	#最新的价格也是过去某一天的future price，需要更新过去某一天的future price
+	stock_past_list = requestStockPast(begin,end,code)
+
+
+
 	for stock_history in stock_history_list:
 		date = stock_history[8]
+		fq_close_price = stock_history[15]
 
 		if date < begin or date > end:
 			continue
@@ -311,6 +320,48 @@ def processStockIncrease(begin,end,code,market):
 									future_price_180,
 									future_price_360])
 
+		#将当前date的price填入之前某一天的future price中
+		past_date_set_30 = []
+		past_date_30 = None
+		getPastDataSet(stock_past_list,date,30,past_date_set_30)
+		if len(past_date_set_30) == 30:
+			past_date_30 = past_date_set_30[len(past_date_set_30)-1]
+
+		past_date_set_90 = []
+		past_date_90 = None
+		getPastDataSet(stock_past_list,date,90,past_date_set_90)
+		if len(past_date_set_90) == 90:
+			past_date_90 = past_date_set_90[len(past_date_set_90)-1]
+
+		past_date_set_180 = []
+		past_date_180 = None
+		getPastDataSet(stock_past_list,date,180,past_date_set_180)
+		if len(past_date_set_180) == 180:
+			past_date_180 = past_date_set_180[len(past_date_set_180)-1]
+
+		past_date_set_360 = []
+		past_date_360 = None
+		getPastDataSet(stock_past_list,date,360,past_date_set_360)
+		if len(past_date_set_360) == 360:
+			past_date_360 = past_date_set_360[len(past_date_set_360)-1]
+
+		if past_date_30 is not None:
+			cursor.execute('update stock_train_data set future_price_30 = %s where `code` = %s and date = %s',[fq_close_price,code,past_date_30])
+			print('update future price 30, code = '+ code+', date = '+date)
+
+		if past_date_90 is not None:
+			cursor.execute('update stock_train_data set future_price_90 = %s where `code` = %s and date = %s',[fq_close_price,code,past_date_90])
+			print('update future price 90, code = '+ code+', date = '+date)
+
+		if past_date_180 is not None:
+			cursor.execute('update stock_train_data set future_price_180 = %s where `code` = %s and date = %s',[fq_close_price,code,past_date_180])
+			print('update future price 180, code = '+ code+', date = '+date)
+
+		if past_date_360 is not None:
+			cursor.execute('update stock_train_data set future_price_360 = %s where `code` = %s and date = %s',[fq_close_price,code,past_date_360])
+			print('update future price 360, code = '+ code+', date = '+date)
+
+
 
 	conn.commit()
 	return None
@@ -408,6 +459,23 @@ def getFutureDataSet(stock_history_list,end,peroid,future):
 			'''
 			if peroid <= 0:
 				break
+
+
+def getPastDataSet(stock_past_list,end,peroid,past):
+	start_collect = False
+	for i in range(len(stock_past_list)-1,-1,-1):
+		date = stock_past_list[i][8]
+		if date == end:
+			start_collect = True
+		if start_collect:
+			past.append(date)
+			peroid = peroid - 1
+			'''
+			修改跳出条件
+			'''
+			if peroid <= 0:
+				break
+
 
 def requestStockHistory(begin,end,code):
 	global conn
@@ -510,6 +578,58 @@ def requestStockFuture(begin,end,code):
 	return stock_future_list
 
 
+
+def requestStockPast(begin,end,code):
+	global conn
+	global cursor
+	stock_past_list = []
+
+	enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
+	begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
+	diff = (enddate-begindate).days
+
+	cursor.execute(''.join(['SELECT ',
+								'* ',
+							'FROM ',
+								'( ',
+									'SELECT ',
+										'stock_history.min_price, ',
+										'stock_history.market, ',
+										'stock_history.trade_num, ',
+										'stock_history.trade_money, ',
+										'stock_history.close_price, ',
+										'stock_history.open_price, ',
+										'stock_history.`code`, ',
+										'stock_history.max_price, ',
+										'stock_history.date, ',
+										'stock_history.last_close_price, ',
+										'stock_history.increase, ',
+										'stock_history.increase_rate, ',
+										'stock_history.turnover_rate, ',
+										'stock_history.total_value, ',
+										'stock_history.circulation_value, ',
+										'stock_history.fq_close_price ',
+									'FROM ',
+										'stock_history ',
+									'WHERE ',
+										'stock_history.`code` = %s ',
+									'AND stock_history.fq_close_price IS NOT NULL ',
+									'AND date <= %s ',
+									'ORDER BY ',
+										'date DESC ',
+									'LIMIT 0, ',
+									'%s ',
+								') t ',
+							'ORDER BY ',
+								'date ASC ']), [code,end,diff + 380])
+
+	results = cursor.fetchall()
+	for result in results:
+		stock_past_list.append(result)
+	return stock_past_list
+
+
+
 def getCodeList(market):
 	global conn
 	global cursor
@@ -527,4 +647,4 @@ def reverse(arr):
 	return reverse_arr
 
 if __name__ == '__main__':
-	processIncrease('2017-08-10','2017-08-10')
+	processIncrease('2017-07-01','2017-08-30')
