@@ -21,7 +21,6 @@ def processIncrease(begin,end):
 	cursor = conn.cursor()
 	for market in markets:
 		code_list = getCodeList(market)
-		line_num = 0  
 		for code in code_list:
 			processStockIncrease(begin,end,code,market)
 	cursor.close()

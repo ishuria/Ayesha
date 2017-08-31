@@ -3,6 +3,8 @@ import numpy as np
 import tensorflow as tf
 import config
 import MySQLdb as mdb
+import stock_sql
+import os
 
 
 #学习开始年份
@@ -12,9 +14,7 @@ LEARNING_YEAR_END = '2014'
 #验证年份
 VALIDATION_YEAR = '2015'
 #市场
-MARKETS = ['sh','sz']
-
-
+markets = ['sh','sz']
 
 
 #定义常量
@@ -25,14 +25,102 @@ output_size=1
 lr=0.0006
 
 
-
-
+conn = None
+cursor = None
 
 
 #获取训练集
-def get_train_data(code,batch_size=60,time_step=20,train_begin_year='2010',train_end_year='2014'):
-    date_begin = train_begin_year + '-01-01'
-    date_end = train_end_year + '-12-31'
+def get_train_data(code,batch_size=60,time_step=20,begin='2010-01-01',end='2014-12-31'):
+    global conn
+    global cursor
+    stock_history_list = []
+    stock_price_list = []
+    cursor.execute(''.join([
+            'SELECT ',
+            't.trade_num, ',
+            't.trade_money, ',
+            't.fq_close_price, ',
+            't.turnover_rate, ',
+            't.total_value, ',
+            't.circulation_value, ',
+            'a.future_price_30, ',
+            'a.future_price_90, ',
+            'a.future_price_180, ',
+            'a.future_price_360 ',
+            'FROM ',
+            '    stock_history t ',
+            'INNER JOIN stock_train_data a ON a.`code` = t.`code` ',
+            'AND a.date = t.date ',
+            'WHERE ',
+            '    t.date >= %s ',
+            'AND t.date <= %s ',
+            'AND t.`code` = %s ',
+            'ORDER BY t.date ASC '
+        ]) , [begin,end,code])
+    results = cursor.fetchall()
+    for result in results:
+        stock_history = []
+        stock_price = []
+        #trade_num:2
+        stock_history.append(result[0])
+        #trade_money:3
+        stock_history.append(result[1])
+        #close_price:4
+        stock_history.append(result[2])
+        #turn_over:12
+        stock_history.append(result[3])
+        #total_value:13
+        stock_history.append(result[4])
+        #circulation_value:14
+        stock_history.append(result[5])
+        stock_history_list.append(stock_history)
+
+        stock_price.append(result[6])
+        stock_price.append(result[7])
+        stock_price.append(result[8])
+        stock_price.append(result[9])
+        stock_price_list.append(stock_price)
+
+
+
+    conn.commit()
+
+    #标准化
+    normalized_stock_history_list = (stock_history_list - np.mean(stock_history_list,axis=0)) / np.std(stock_history_list,axis=0)
+    normalized_stock_price_list = (stock_price_list - np.mean(stock_price_list,axis=0)) / np.std(stock_price_list,axis=0)
+
+    #训练集输入
+    train_x = []
+    #训练集输出
+    train_y_30 = []
+    train_y_90 = []
+    train_y_180 = []
+    train_y_360 = []
+
+    batch_index=[]
+    for i in range(len(normalized_stock_history_list) - time_step):
+       if i % batch_size==0:
+           batch_index.append(i)
+       x=normalized_stock_history_list[i:i+time_step,:6]
+       #print(x)
+       y_30=normalized_stock_price_list[i:i+time_step,0,np.newaxis]
+       y_90=normalized_stock_price_list[i:i+time_step,1,np.newaxis]
+       y_180=normalized_stock_price_list[i:i+time_step,2,np.newaxis]
+       y_360=normalized_stock_price_list[i:i+time_step,3,np.newaxis]
+       
+       #print(y)
+       train_x.append(x.tolist())
+       train_y_30.append(y_30.tolist())
+       train_y_90.append(y_90.tolist())
+       train_y_180.append(y_180.tolist())
+       train_y_360.append(y_360.tolist())
+
+    batch_index.append((len(normalized_stock_history_list)-time_step))
+    return batch_index,train_x,train_y_30,train_y_90,train_y_180,train_y_360
+
+
+#获取测试集
+def get_test_data(code,time_step=20,begin='2010-01-01',end='2014-12-31'):
     conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
     cursor = conn.cursor()
     stock_history_list = []
@@ -57,95 +145,8 @@ def get_train_data(code,batch_size=60,time_step=20,train_begin_year='2010',train
             '    t.date >= %s ',
             'AND t.date <= %s ',
             'AND t.`code` = %s ',
-            'ORDER BY t.date asc '
-        ]) , [date_begin,date_end,code])
-    results = cursor.fetchall()
-    for result in results:
-        stock_history = []
-        stock_price = []
-        #trade_num:2
-        stock_history.append(result[0])
-        #trade_money:3
-        stock_history.append(result[1])
-        #close_price:4
-        stock_history.append(result[2])
-        #turn_over:12
-        stock_history.append(result[3])
-        #total_value:13
-        stock_history.append(result[4])
-        #circulation_value:14
-        stock_history.append(result[5])
-        stock_history_list.append(stock_history)
-
-        #stock_price.append(result[6])
-        #stock_price.append(result[7])
-        stock_price.append(result[8])
-        #stock_price.append(result[9])
-        stock_price_list.append(stock_price)
-
-
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    #标准化
-    normalized_stock_history_list = (stock_history_list - np.mean(stock_history_list,axis=0)) / np.std(stock_history_list,axis=0)
-    normalized_stock_price_list = (stock_price_list - np.mean(stock_price_list,axis=0)) / np.std(stock_price_list,axis=0)
-
-    #训练集输入
-    train_x = []
-    #训练集输出
-    train_y = []
-
-    batch_index=[]
-    for i in range(len(normalized_stock_history_list) - time_step):
-       if i % batch_size==0:
-           batch_index.append(i)
-       x=normalized_stock_history_list[i:i+time_step,:6]
-       #print(x)
-       y=normalized_stock_price_list[i:i+time_step,0,np.newaxis]
-       
-       #print(y)
-       train_x.append(x.tolist())
-       train_y.append(y.tolist())
-    batch_index.append((len(normalized_stock_history_list)-time_step))
-
-
-
-
-    return batch_index,train_x,train_y
-
-
-#获取测试集
-def get_test_data(code,time_step=20,train_begin_year='2010',train_end_year='2014'):
-    date_begin = train_begin_year + '-01-01'
-    date_end = train_end_year + '-12-31'
-    conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-    cursor = conn.cursor()
-    stock_history_list = []
-    stock_price_list = []
-    cursor.execute(''.join([
-            'SELECT ',
-            't.trade_num, ',
-            't.trade_money, ',
-            't.fq_close_price, ',
-            't.turnover_rate, ',
-            't.total_value, ',
-            't.circulation_value, ',
-            'a.future_price_30, ',
-            'a.future_price_90, ',
-            'a.future_price_180, ',
-            'a.future_price_360 ',
-            'FROM ',
-            '    stock_history t ',
-            'INNER JOIN stock_train_data a ON a.`code` = t.`code` ',
-            'AND a.date = t.date ',
-            'WHERE ',
-            '    t.date >= %s ',
-            'AND t.date <= %s ',
-            'AND t.`code` = %s '
-        ]) , [date_begin,date_end,code])
+            'ORDER BY  t.date ASC '
+        ]) , [begin,end,code])
     results = cursor.fetchall()
     for result in results:
         stock_history = []
@@ -165,14 +166,9 @@ def get_test_data(code,time_step=20,train_begin_year='2010',train_end_year='2014
         stock_history.append(float(result[8]))
         stock_history_list.append(stock_history)
 
-
     conn.commit()
     cursor.close()
     conn.close()
-
-
-
-
 
     mean=np.mean(stock_history_list,axis=0)
     std=np.std(stock_history_list,axis=0)
@@ -192,7 +188,6 @@ def get_test_data(code,time_step=20,train_begin_year='2010',train_end_year='2014
 
 #——————————————————定义神经网络变量——————————————————
 #输入层、输出层权重、偏置
-
 weights={
          'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
          'out':tf.Variable(tf.random_normal([rnn_unit,1]))
@@ -213,40 +208,12 @@ def lstm(X):
     input_rnn=tf.reshape(input_rnn,[-1,time_step,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
     cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
     init_state=cell.zero_state(batch_size,dtype=tf.float32)
-    output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)  #output_rnn是记录lstm每个输出节点的结果，final_states是最后一个cell的结果
+    output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
     output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
     w_out=weights['out']
     b_out=biases['out']
     pred=tf.matmul(output,w_out)+b_out
     return pred,final_states
-
-
-
-#——————————————————训练模型——————————————————
-def train_lstm(code,batch_size=80,time_step=15,train_begin_year='2010',train_end_year='2014'):
-    X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
-    Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
-    batch_index,train_x,train_y=get_train_data(code,batch_size,time_step,train_begin_year,train_end_year)
-    pred,_=lstm(X)
-    #损失函数
-    loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
-    train_op=tf.train.AdamOptimizer(lr).minimize(loss)
-    saver=tf.train.Saver(tf.global_variables(),max_to_keep=15)
-    module_file = tf.train.latest_checkpoint('/home/ayesha/data')
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        #saver.restore(sess, module_file)
-        #重复训练10000次
-        for i in range(2000):
-            for step in range(len(batch_index)-1):
-                _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
-            print(i,loss_)
-            if i % 200==0:
-                print("保存模型：",saver.save(sess,'stock2.model',global_step=i))
-
-
-#train_lstm()
-
 
 #————————————————预测模型————————————————————
 def prediction(code,time_step=20,train_begin_year='2010',train_end_year='2014'):
@@ -257,7 +224,7 @@ def prediction(code,time_step=20,train_begin_year='2010',train_end_year='2014'):
     saver=tf.train.Saver(tf.global_variables())
     with tf.Session() as sess:
         #参数恢复
-        module_file = tf.train.latest_checkpoint('/home/ayesha/data')
+        module_file = tf.train.latest_checkpoint('/home/ayesha/data/models')
         saver.restore(sess, module_file)
         test_predict=[]
         for step in range(len(test_x)-1):
@@ -283,7 +250,83 @@ def prediction(code,time_step=20,train_begin_year='2010',train_end_year='2014'):
 
 
 
+#训练模型，对每一只股票单独建立模型
+def train_lstm(code,batch_size=80,time_step=15,begin='2010-01-01',end='2014-12-31'):
+    with tf.variable_scope(code, reuse=None):
+        X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
+        Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
+        batch_index,train_x,train_y_30,train_y_90,train_y_180,train_y_360=get_train_data(code,batch_size,time_step,begin,end)
+        pred,_=lstm(X)
+        #损失函数
+        loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
+        train_op=tf.train.AdamOptimizer(lr).minimize(loss)
+        saver=tf.train.Saver(tf.global_variables(),max_to_keep=15)
+        module_file = tf.train.latest_checkpoint('/home/ayesha/data/models')
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+
+            path = '/home/ayesha/data/models/'+code
+            if not os.path.exists(path):
+                os.mkdir(path)
+
+            #训练30天数据
+            for i in range(2001):
+                for step in range(len(batch_index)-1):
+                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y_30[batch_index[step]:batch_index[step+1]]})
+                print('30',code,i)
+                if i % 200==0:
+                    print("保存模型：",saver.save(sess,path+'/stock_30.model',global_step=i))
+
+            #训练90天数据
+            for i in range(2001):
+                for step in range(len(batch_index)-1):
+                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y_90[batch_index[step]:batch_index[step+1]]})
+                print('90',code,i)
+                if i % 200==0:
+                    print("保存模型：",saver.save(sess,path+'/stock_90.model',global_step=i))
+
+            #训练180天数据
+            for i in range(2001):
+                for step in range(len(batch_index)-1):
+                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y_180[batch_index[step]:batch_index[step+1]]})
+                print('180',code,i)
+                if i % 200==0:
+                    print("保存模型：",saver.save(sess,path+'/stock_180.model',global_step=i))
+
+            #训练360天数据
+            for i in range(2001):
+                for step in range(len(batch_index)-1):
+                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y_360[batch_index[step]:batch_index[step+1]]})
+                print('360',code,i)
+                if i % 200==0:
+                    print("保存模型：",saver.save(sess,path+'/stock_360.model',global_step=i))
+
+
+#训练函数
+def train(batch_size,time_step,begin,end):
+    global conn
+    global cursor
+    conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
+    cursor = conn.cursor()
+
+    for market in markets:
+        code_list = getCodeList(market)
+        for code in code_list:
+            train_lstm(code,batch_size,time_step,begin,end)
+
+    #关闭数据库连接
+    cursor.close()
+    conn.close()
+
+def getCodeList(market):
+    global conn
+    global cursor
+    stock_list = []
+    cursor.execute(stock_sql.stock_market_select_sql , [market])
+    results = cursor.fetchall()
+    for result in results:
+        stock_list.append(result[6])
+    return stock_list
 
 if __name__ == '__main__':
-    #train_lstm('600000',80,15,'2010','2014')
-    prediction('600004',15,'2010','2014')
+    train(80,15,'2010-01-01','2014-12-31')
