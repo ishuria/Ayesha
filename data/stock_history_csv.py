@@ -23,7 +23,6 @@ def processCSV(file_name,market):
 			saveToDB(line,market)
 	conn.commit()
 	
-
 def trimValue(value):
 	value = value.replace('\'','')
 	if value == 'None' or value == '':
