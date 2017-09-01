@@ -139,44 +139,33 @@ def get_train_data(code,batch_size=60,time_step=20,begin='2010-01-01',end='2014-
     batch_index.append((len(normalized_stock_history_list)-time_step))
     return batch_index,train_x,train_y_30,train_y_90,train_y_180,train_y_360
 
-
-
-
-#——————————————————定义神经网络变量——————————————————
-#输入层、输出层权重、偏置
-weights={
-         'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
-         'out':tf.Variable(tf.random_normal([rnn_unit,1]))
-        }
-biases={
-        'in':tf.Variable(tf.constant(0.1,shape=[rnn_unit,])),
-        'out':tf.Variable(tf.constant(0.1,shape=[1,]))
-       }
-
-#——————————————————定义神经网络变量——————————————————
-def lstm(X):     
-    batch_size=tf.shape(X)[0]
-    time_step=tf.shape(X)[1]
-    w_in=weights['in']
-    b_in=biases['in']  
-    input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
-    input_rnn=tf.matmul(input,w_in)+b_in
-    input_rnn=tf.reshape(input_rnn,[-1,time_step,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
-    cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
-    init_state=cell.zero_state(batch_size,dtype=tf.float32)
-    output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
-    output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
-    w_out=weights['out']
-    b_out=biases['out']
-    pred=tf.matmul(output,w_out)+b_out
-    return pred,final_states
-
-
 def train_lstm_sub(code,batch_index,train_x,train_y,term,batch_size=80,time_step=15,begin='2010-01-01',end='2014-12-31'):
     with tf.variable_scope(code + '_' + term, reuse=None):
         X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
         Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
-        pred,_=lstm(X)
+        weights={
+             'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
+             'out':tf.Variable(tf.random_normal([rnn_unit,1]))
+            }
+        biases={
+                'in':tf.Variable(tf.constant(0.1,shape=[rnn_unit,])),
+                'out':tf.Variable(tf.constant(0.1,shape=[1,]))
+               }
+        batch_size=tf.shape(X)[0]
+        time_step=tf.shape(X)[1]
+        w_in=weights['in']
+        b_in=biases['in']  
+        input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
+        input_rnn=tf.matmul(input,w_in)+b_in
+        input_rnn=tf.reshape(input_rnn,[-1,time_step,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
+        cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
+        init_state=cell.zero_state(batch_size,dtype=tf.float32)
+        output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
+        output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
+        w_out=weights['out']
+        b_out=biases['out']
+        pred=tf.matmul(output,w_out)+b_out
+
         #损失函数
         loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
         train_op=tf.train.AdamOptimizer(lr).minimize(loss)
@@ -195,11 +184,9 @@ def train_lstm_sub(code,batch_index,train_x,train_y,term,batch_size=80,time_step
             #训练30天数据
             for i in range(2001):
                 for step in range(len(batch_index)-1):
-                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
+                    final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
                 if i % 200==0:
                     print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=i))
-
-
 
 #训练模型，对每一只股票单独建立模型
 def train_lstm(code,batch_size=80,time_step=15,begin='2010-01-01',end='2014-12-31'):
