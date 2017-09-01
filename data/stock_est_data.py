@@ -16,6 +16,16 @@ rnn_unit=10
 def get_test_data(code,time_step=20,date='2017-01-01'):
 	global conn
 	global cursor
+
+	mean,std,test_x,future_price_30,future_price_90,future_price_180,future_price_360 = None,None,[],None,None,None,None
+	#如果当天不是交易日，返回空
+	cursor.execute('SELECT count(1) count FROM stock_history WHERE stock_history.`code` = %s AND stock_history.date = %s', [code, date])
+	result = cursor.fetchone()
+	count = result[0]
+	#如果有记录，更新
+	if count == 0:
+		return mean,std,test_x,future_price_30,future_price_90,future_price_180,future_price_360
+
 	stock_history_list = []
 	stock_price_list = []
 	cursor.execute(''.join([
@@ -37,13 +47,14 @@ def get_test_data(code,time_step=20,date='2017-01-01'):
 			'			t.date ',
 			'		FROM ',
 			'			stock_history t ',
-			'		INNER JOIN stock_train_data a ON a.`code` = t.`code` ',
+			'		LEFT JOIN stock_train_data a ON a.`code` = t.`code` ',
 			'		AND a.date = t.date ',
 			'		WHERE ',
-			'			t.date >= %s ',
+			'			t.date <= %s ',
 			'		AND t.`code` = %s ',
+			'		AND t.fq_close_price is not null ',
 			'		ORDER BY ',
-			'			t.date ASC ',
+			'			t.date DESC ',
 			'		LIMIT 0, ',
 			'		360 ',
 			'	) tt ',
@@ -55,51 +66,46 @@ def get_test_data(code,time_step=20,date='2017-01-01'):
 		stock_history = []
 		stock_price = []
 		#trade_num:2
-		stock_history.append((result[0]))
+		stock_history.append(float(result[0]))
 		#trade_money:3
-		stock_history.append((result[1]))
+		stock_history.append(float(result[1]))
 		#close_price:4
-		stock_history.append((result[2]))
+		stock_history.append(float(result[2]))
 		#turn_over:12
-		stock_history.append((result[3]))
+		stock_history.append(float(result[3]))
 		#total_value:13
-		stock_history.append((result[4]))
+		stock_history.append(float(result[4]))
 		#circulation_value:14
-		stock_history.append((result[5]))
+		stock_history.append(float(result[5]))
+		#future_price_30
+		stock_history.append(float(result[6]))
+		#future_price_90
+		stock_history.append(float(result[7]))
+		#future_price_180
+		stock_history.append(float(result[8]))
+		#future_price_360
+		stock_history.append(float(result[9]))
 		stock_history_list.append(stock_history)
-
 	conn.commit()
 
+	#标准化
 	mean=np.mean(stock_history_list,axis=0)
 	std=np.std(stock_history_list,axis=0)
-	normalized_test_data=(stock_history_list-mean)/std  #标准化
-	size=(len(normalized_test_data)+time_step-1)/time_step  #有size个sample 
-	test_x = []
-	test_y_30 = []
-	test_y_90 = []
-	test_y_180 = []
-	test_y_360 = []
+	normalized_test_data=(stock_history_list-mean)/std
+
+	size=(len(normalized_test_data)+time_step-1)/time_step  #有size个sample
+
+
+	#数据不一定需要有future_price
 	for i in range(size-1):
 	   x=normalized_test_data[i*time_step:(i+1)*time_step,:6]
-	   y_30=normalized_test_data[i*time_step:(i+1)*time_step,6]
-	   y_90=normalized_test_data[i*time_step:(i+1)*time_step,7]
-	   y_180=normalized_test_data[i*time_step:(i+1)*time_step,8]
-	   y_360=normalized_test_data[i*time_step:(i+1)*time_step,9]
 	   test_x.append(x.tolist())
-	   test_y_30.extend(y_30)
-	   test_y_90.extend(y_90)
-	   test_y_180.extend(y_180)
-	   test_y_360.extend(y_360)
 	test_x.append((normalized_test_data[(i+1)*time_step:,:6]).tolist())
-	test_y_30.extend((normalized_test_data[(i+1)*time_step:,6]).tolist())
-	test_y_90.extend((normalized_test_data[(i+1)*time_step:,7]).tolist())
-	test_y_180.extend((normalized_test_data[(i+1)*time_step:,8]).tolist())
-	test_y_360.extend((normalized_test_data[(i+1)*time_step:,9]).tolist())
-	return mean,std,test_x,test_y_30,test_y_90,test_y_180,test_y_360
-
-
-
-
+	future_price_30 = stock_history_list[-1][6]
+	future_price_90 = stock_history_list[-1][7]
+	future_price_180 = stock_history_list[-1][8]
+	future_price_360 = stock_history_list[-1][9]
+	return mean,std,test_x,future_price_30,future_price_90,future_price_180,future_price_360
 
 def getCodeList(market):
 	global conn
@@ -110,8 +116,6 @@ def getCodeList(market):
 	for result in results:
 		stock_list.append(result[6])
 	return stock_list
-
-
 
 #——————————————————定义神经网络变量——————————————————
 #输入层、输出层权重、偏置
@@ -142,7 +146,6 @@ def lstm(X):
 	pred=tf.matmul(output,w_out)+b_out
 	return pred,final_states
 
-
 #————————————————预测模型————————————————————
 def predict_lstm(code,time_step=20,begin='2010-01-01',end='2014-12-31'):
 	global conn
@@ -151,26 +154,23 @@ def predict_lstm(code,time_step=20,begin='2010-01-01',end='2014-12-31'):
 	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
 	cursor = conn.cursor()
 
-
 	begindate=datetime.datetime.strptime(begin,'%Y-%m-%d')
 	enddate=datetime.datetime.strptime(end,'%Y-%m-%d')
-	reuse = None
+
 	while begindate<=enddate:
 		date = begindate.strftime('%Y-%m-%d')
-		mean,std,test_x,test_y_30,test_y_90,test_y_180,test_y_360 = get_test_data(code,time_step,date)
+		mean,std,test_x,future_price_30,future_price_90,future_price_180,future_price_360 = get_test_data(code,time_step,date)
 
-		if len()
+		#如果当天不是交易日，继续下一天
+		if len(test_x) == 0:
+			begindate+=datetime.timedelta(days=1)
+			continue
 
-		future_price_30,est_price_30 = predict_lstm_30(code,time_step,mean,std,test_x,test_y_30,reuse)
-		print(future_price_30)
-		print(est_price_30)
-		if reuse is None:
-			reuse = True
-		future_price_90,est_price_90 = predict_lstm_90(code,time_step,mean,std,test_x,test_y_90,reuse)
-		future_price_180,est_price_180 = predict_lstm_180(code,time_step,mean,std,test_x,test_y_180,reuse)
-		future_price_360,est_price_360 = predict_lstm_360(code,time_step,mean,std,test_x,test_y_360,reuse)
+		est_price_30 = predict_lstm_sub(code,time_step,mean,std,test_x,'30')
+		est_price_90 = predict_lstm_sub(code,time_step,mean,std,test_x,'90')
+		est_price_180 = predict_lstm_sub(code,time_step,mean,std,test_x,'180')
+		est_price_360 = predict_lstm_sub(code,time_step,mean,std,test_x,'360')
 		
-
 		cursor.execute('SELECT count(1) count from stock_est_data where stock_est_data.`code` = %s and stock_est_data.date = %s' , [code, date])
 		result = cursor.fetchone()
 		count = result[0]
@@ -209,18 +209,16 @@ def predict_lstm(code,time_step=20,begin='2010-01-01',end='2014-12-31'):
 		np.savetxt("test_predict.txt", test_predict);
 		print(acc)
 		'''
-
+		conn.commit()
 		begindate+=datetime.timedelta(days=1)
-		
-
-	conn.commit()
+	
 	#关闭数据库连接
 	cursor.close()
 	conn.close()
 
 
-def predict_lstm_30(code,time_step,mean,std,test_x,test_y_30,reuse_param):
-	with tf.variable_scope(code, reuse=reuse_param):
+def predict_lstm_sub(code,time_step,mean,std,test_x,term):
+	with tf.variable_scope(code + '_' + term, reuse=None):
 		with tf.Session() as sess:
 			X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
 			#Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
@@ -228,101 +226,21 @@ def predict_lstm_30(code,time_step,mean,std,test_x,test_y_30,reuse_param):
 			saver=tf.train.Saver(tf.global_variables())
 		
 			#参数恢复
-			path = '/home/ayesha/data/models/'+code
+			code_path = '/home/ayesha/data/models/'+code
+            model_path = code_path + '/' + term
 
-			module_file_30 = tf.train.latest_checkpoint(path+'/30')
+			module_file = tf.train.latest_checkpoint(model_path)
 			#30天
-			saver.restore(sess, module_file_30)
+			saver.restore(sess, module_file)
 			test_predict=[]
 			for step in range(len(test_x)-1):
 				prob=sess.run(pred,feed_dict={X:[test_x[step]]})
 				predict=prob.reshape((-1))
 				test_predict.extend(predict)
-			#真实值30
-			future_price_30 = test_y_30[-1]
-			#预测值30
-			est_price_30 = test_predict[-1]
-			return future_price_30,est_price_30
-
-
-def predict_lstm_90(code,time_step,mean,std,test_x,test_y_90,reuse_param):
-	with tf.variable_scope(code, reuse=reuse_param):
-		with tf.Session() as sess:
-			X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
-			#Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
-			
-			pred,_=lstm(X)
-			saver=tf.train.Saver(tf.global_variables())
-		
-			#参数恢复
-			path = '/home/ayesha/data/models/'+code
-
-			module_file_90 = tf.train.latest_checkpoint(path+'/90')
-			#30天
-			saver.restore(sess, module_file_90)
-			test_predict=[]
-			for step in range(len(test_x)-1):
-				prob=sess.run(pred,feed_dict={X:[test_x[step]]})
-				predict=prob.reshape((-1))
-				test_predict.extend(predict)
-			#真实值30
-			future_price_90 = test_y_90[-1]
-			#预测值30
-			est_price_90 = test_predict[-1]
-			return future_price_90,est_price_90
-
-
-def predict_lstm_180(code,time_step,mean,std,test_x,test_y_180,reuse_param):
-	with tf.variable_scope(code, reuse=reuse_param):
-		with tf.Session() as sess:
-			X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
-			#Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
-			
-			pred,_=lstm(X)
-			saver=tf.train.Saver(tf.global_variables())
-		
-			#参数恢复
-			path = '/home/ayesha/data/models/'+code
-
-			module_file_180 = tf.train.latest_checkpoint(path+'/180')
-			#30天
-			saver.restore(sess, module_file_180)
-			test_predict=[]
-			for step in range(len(test_x)-1):
-				prob=sess.run(pred,feed_dict={X:[test_x[step]]})
-				predict=prob.reshape((-1))
-				test_predict.extend(predict)
-			#真实值30
-			future_price_180 = test_y_180[-1]
-			#预测值30
-			est_price_180 = test_predict[-1]
-			return future_price_180,est_price_180
-
-def predict_lstm_360(code,time_step,mean,std,test_x,test_y_360,reuse_param):
-	with tf.variable_scope(code, reuse=reuse_param):
-		with tf.Session() as sess:
-			X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
-			#Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
-			
-			pred,_=lstm(X)
-			saver=tf.train.Saver(tf.global_variables())
-		
-			#参数恢复
-			path = '/home/ayesha/data/models/'+code
-
-			module_file_360 = tf.train.latest_checkpoint(path+'/360')
-			#30天
-			saver.restore(sess, module_file_360)
-			test_predict=[]
-			for step in range(len(test_x)-1):
-				prob=sess.run(pred,feed_dict={X:[test_x[step]]})
-				predict=prob.reshape((-1))
-				test_predict.extend(predict)
-			#真实值30
-			future_price_360 = test_y_360[-1]
-			#预测值30
-			est_price_360 = test_predict[-1]
-			return future_price_360,est_price_360
+			#预测值
+			test_predict=np.array(test_predict)*std+mean
+			est_price = test_predict[-1]
+			return est_price
 
 def insert_stock_est_data(params):
 	global cursor

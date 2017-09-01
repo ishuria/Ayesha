@@ -172,14 +172,10 @@ def lstm(X):
     return pred,final_states
 
 
-
-
-#训练模型，对每一只股票单独建立模型
-def train_lstm(code,batch_size=80,time_step=15,begin='2010-01-01',end='2014-12-31'):
-    with tf.variable_scope(code, reuse=None):
+def train_lstm_sub(code,batch_index,train_x,train_y,term,batch_size=80,time_step=15,begin='2010-01-01',end='2014-12-31'):
+    with tf.variable_scope(code + '_' + term, reuse=None):
         X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
         Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
-        batch_index,train_x,train_y_30,train_y_90,train_y_180,train_y_360=get_train_data(code,batch_size,time_step,begin,end)
         pred,_=lstm(X)
         #损失函数
         loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
@@ -188,54 +184,30 @@ def train_lstm(code,batch_size=80,time_step=15,begin='2010-01-01',end='2014-12-3
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
 
-            path = '/home/ayesha/data/models/'+code
-            if not os.path.exists(path):
-                os.mkdir(path)
+            code_path = '/home/ayesha/data/models/'+code
+            model_path = code_path + '/' + term
+            if not os.path.exists(code_path):
+                os.mkdir(code_path)
 
-            if not os.path.exists(path + '/30'):
-                os.mkdir(path + '/30')
-
-            if not os.path.exists(path + '/90'):
-                os.mkdir(path + '/90')
-
-            if not os.path.exists(path + '/180'):
-                os.mkdir(path + '/180')
-
-            if not os.path.exists(path + '/360'):
-                os.mkdir(path + '/360')
+            if not os.path.exists(model_path):
+                os.mkdir(model_path)
 
             #训练30天数据
             for i in range(2001):
                 for step in range(len(batch_index)-1):
-                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y_30[batch_index[step]:batch_index[step+1]]})
-                print('30',code,i)
+                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
                 if i % 200==0:
-                    print("保存模型：",saver.save(sess,path+'/30/stock.model',global_step=i))
+                    print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=i))
 
-            #训练90天数据
-            for i in range(2001):
-                for step in range(len(batch_index)-1):
-                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y_90[batch_index[step]:batch_index[step+1]]})
-                print('90',code,i)
-                if i % 200==0:
-                    print("保存模型：",saver.save(sess,path+'/90/stock.model',global_step=i))
 
-            #训练180天数据
-            for i in range(2001):
-                for step in range(len(batch_index)-1):
-                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y_180[batch_index[step]:batch_index[step+1]]})
-                print('180',code,i)
-                if i % 200==0:
-                    print("保存模型：",saver.save(sess,path+'/180/stock.model',global_step=i))
 
-            #训练360天数据
-            for i in range(2001):
-                for step in range(len(batch_index)-1):
-                    _,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y_360[batch_index[step]:batch_index[step+1]]})
-                print('360',code,i)
-                if i % 200==0:
-                    print("保存模型：",saver.save(sess,path+'/360/stock.model',global_step=i))
-
+#训练模型，对每一只股票单独建立模型
+def train_lstm(code,batch_size=80,time_step=15,begin='2010-01-01',end='2014-12-31'):
+    batch_index,train_x,train_y_30,train_y_90,train_y_180,train_y_360=get_train_data(code,batch_size,time_step,begin,end)
+    train_lstm_sub( code, batch_index, train_x, train_y_30, '30', batch_size, time_step, begin, end)
+    train_lstm_sub( code, batch_index, train_x, train_y_90, '90', batch_size, time_step, begin, end)
+    train_lstm_sub( code, batch_index, train_x, train_y_180, '180', batch_size, time_step, begin, end)
+    train_lstm_sub( code, batch_index, train_x, train_y_360, '360', batch_size, time_step, begin, end)
 
 #训练函数
 def train(batch_size,time_step,begin,end):
