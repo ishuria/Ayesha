@@ -9,3 +9,5 @@ mysql_pass = 'Ayesha_topaz77'
 mysql_db = 'ayesha'
 
 appcode = 'f86b2760312b41a0b9ef963ceca71b0b'
+
+lstm_data_size = 2000

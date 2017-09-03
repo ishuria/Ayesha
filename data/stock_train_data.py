@@ -647,4 +647,4 @@ def reverse(arr):
 	return reverse_arr
 
 if __name__ == '__main__':
-	processIncrease('2017-07-01','2017-08-30')
+	processIncrease('2000-01-01','2010-12-31')

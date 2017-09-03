@@ -4,27 +4,26 @@ import tensorflow as tf
 import config
 import MySQLdb as mdb
 import stock_sql
-import datetime  
+import datetime
 
 conn = None
 cursor = None
 
 input_size=6
 
+rnn_unit=30
+
 
 #获取测试集
-def get_test_data(code,time_step=20,date='2017-01-01'):
-	global conn
-	global cursor
-
-	mean,std,test_x,future_price_30,future_price_90,future_price_180,future_price_360 = None,None,[],None,None,None,None
+def get_test_data(code,time_step,term,date):
+	mean,std,test_x,future_price = None,None,[],None
 	#如果当天不是交易日，返回空
 	cursor.execute('SELECT count(1) count FROM stock_history WHERE stock_history.`code` = %s AND stock_history.date = %s', [code, date])
 	result = cursor.fetchone()
 	count = result[0]
 	#如果有记录，更新
 	if count == 0:
-		return mean,std,test_x,future_price_30,future_price_90,future_price_180,future_price_360
+		return mean,std,test_x,future_price
 
 	stock_history_list = []
 	stock_price_list = []
@@ -40,10 +39,7 @@ def get_test_data(code,time_step=20,date='2017-01-01'):
 			'			t.turnover_rate, ',
 			'			t.total_value, ',
 			'			t.circulation_value, ',
-			'			a.future_price_30, ',
-			'			a.future_price_90, ',
-			'			a.future_price_180, ',
-			'			a.future_price_360, ',
+			'			a.future_price_'+term+', ',
 			'			t.date ',
 			'		FROM ',
 			'			stock_history t ',
@@ -56,7 +52,7 @@ def get_test_data(code,time_step=20,date='2017-01-01'):
 			'		ORDER BY ',
 			'			t.date DESC ',
 			'		LIMIT 0, ',
-			'		360 ',
+			'		2000 ',
 			'	) tt ',
 			'ORDER BY ',
 			'	tt.date ASC '
@@ -77,14 +73,8 @@ def get_test_data(code,time_step=20,date='2017-01-01'):
 		stock_history.append(float(result[4]))
 		#circulation_value:14
 		stock_history.append(float(result[5]))
-		#future_price_30
+		#future_price
 		stock_history.append(float(result[6]))
-		#future_price_90
-		stock_history.append(float(result[7]))
-		#future_price_180
-		stock_history.append(float(result[8]))
-		#future_price_360
-		stock_history.append(float(result[9]))
 		stock_history_list.append(stock_history)
 	conn.commit()
 
@@ -102,11 +92,8 @@ def get_test_data(code,time_step=20,date='2017-01-01'):
 	   x=normalized_test_data[i*time_step:(i+1)*time_step,:6]
 	   test_x.append(x.tolist())
 	test_x.append((normalized_test_data[(i+1)*time_step:,:6]).tolist())
-	future_price_30 = stock_history_list[-1][6]
-	future_price_90 = stock_history_list[-1][7]
-	future_price_180 = stock_history_list[-1][8]
-	future_price_360 = stock_history_list[-1][9]
-	return mean,std,test_x,future_price_30,future_price_90,future_price_180,future_price_360
+	future_price = stock_history_list[-1][6]
+	return mean,std,test_x,future_price
 
 def getCodeList(market):
 	global conn
@@ -118,42 +105,13 @@ def getCodeList(market):
 		stock_list.append(result[6])
 	return stock_list
 
-#————————————————预测模型————————————————————
-def predict_lstm(code,time_step=20,begin='2010-01-01',end='2014-12-31'):
-	global conn
-	global cursor
-
-	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-	cursor = conn.cursor()
-
-
-	predict_lstm_sub(code,begin,end,time_step,'30')
-	predict_lstm_sub(code,begin,end,time_step,'90')
-	predict_lstm_sub(code,begin,end,time_step,'180')
-	predict_lstm_sub(code,begin,end,time_step,'360')
-
-
-		
-	
-	#关闭数据库连接
-	cursor.close()
-	conn.close()
-
-rnn_unit=10
-
-
-
-
 #——————————————————定义神经网络变量——————————————————
 def lstm(X):	 
-	
 	return pred,final_states
 
 
-def predict_lstm_sub(code,begin,end,time_step,term):
+def predict_lstm(code,time_step,term,begin,end):
 	with tf.variable_scope(code + '_' + term, reuse=None):
-
-
 		#输入层、输出层权重、偏置
 		weights={
 				 'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
@@ -187,14 +145,13 @@ def predict_lstm_sub(code,begin,end,time_step,term):
 			module_file = tf.train.latest_checkpoint(model_path)
 			saver.restore(sess, module_file)
 
-
 			begindate=datetime.datetime.strptime(begin,'%Y-%m-%d')
-
 			enddate=datetime.datetime.strptime(end,'%Y-%m-%d')
+
 			while begindate<=enddate:
 				date = begindate.strftime('%Y-%m-%d')
 
-				mean,std,test_x,future_price_30,future_price_90,future_price_180,future_price_360 = get_test_data(code,time_step,date)
+				mean,std,test_x,future_price = get_test_data(code,time_step,term,date)
 
 				if len(test_x) == 0:
 					begindate+=datetime.timedelta(days=1)
@@ -212,95 +169,30 @@ def predict_lstm_sub(code,begin,end,time_step,term):
 				print('insert or update estimate data, code = '+code+', date = '+date +', term = ' + term)
 				insert_or_update_data([code,date,
 						est_price,
-						future_price_30,
-						future_price_90,
-						future_price_180,
-						future_price_360,
+						future_price,
 						est_price,
-						future_price_30,
-						future_price_90,
-						future_price_180,
-						future_price_360],term)
+						future_price],term)
 				
 				begindate+=datetime.timedelta(days=1)
 
 
-
-'''
-def predict_lstm_sub(code,time_step,mean,std,test_x,term,reuse_param):
-	with tf.variable_scope(code + '_' + term, reuse=reuse_param):
-		X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
-		rnn_unit=10
-		#——————————————————定义神经网络变量——————————————————
-		#输入层、输出层权重、偏置
-		weights={
-				 'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
-				 'out':tf.Variable(tf.random_normal([rnn_unit,1]))
-				}
-		biases={
-				'in':tf.Variable(tf.constant(0.1,shape=[rnn_unit,])),
-				'out':tf.Variable(tf.constant(0.1,shape=[1,]))
-			   }
-
-		batch_size=tf.shape(X)[0]
-		time_step=tf.shape(X)[1]
-		w_in=weights['in']
-		b_in=biases['in']  
-		input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
-		input_rnn=tf.matmul(input,w_in)+b_in
-		input_rnn=tf.reshape(input_rnn,[-1,time_step,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
-		cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
-		init_state=cell.zero_state(batch_size,dtype=tf.float32)
-		output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
-		output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
-		w_out=weights['out']
-		b_out=biases['out']
-		pred=tf.matmul(output,w_out)+b_out
-		saver=tf.train.Saver()
-		with tf.Session() as sess:
-			#参数恢复
-			code_path = '/home/ayesha/data/models/'+code
-			model_path = code_path + '/' + term
-			module_file = tf.train.latest_checkpoint(model_path)
-			saver.restore(sess, module_file)
-			
-			test_predict=[]
-			for step in range(len(test_x)-1):
-				prob=sess.run(pred,feed_dict={X:[test_x[step]]})
-				predict=prob.reshape((-1))
-				test_predict.extend(predict)
-			#预测值
-			test_predict=np.array(test_predict)*std[2]+mean[2]
-			est_price = test_predict[-1]
-			return est_price
-'''
-
-
 def insert_or_update_data(params,term):
-	global cursor
-	global conn
 	cursor.execute(''.join([
 		'INSERT INTO stock_est_data ( ',
 		'	`code`, ',
 		'	date, ',
 		'	est_price_'+term+', ',
-		'	future_price_30, ',
-		'	future_price_90, ',
-		'	future_price_180, ',
-		'	future_price_360 ',
+		'	future_price_'+term+' '
 		') ',
 		'VALUES ',
 		'	( ',
-		'		% s ,% s ,% s ,% s ,% s ,% s ,% s ',
+		'		% s ,% s ,% s ,% s ',
 		'	) ON DUPLICATE KEY UPDATE est_price_' + term + ' = % s, ',
-		'	future_price_30 = % s, ',
-		'	future_price_90 = % s, ',
-		'	future_price_180 = % s, ',
-		'	future_price_360 = % s '
+		'	future_price_' + term + ' = % s ',
 		]),params)
 	conn.commit()
 
-def predict(time_step,begin,end):
+def predict(time_step,term,begin,end):
 	global conn
 	global cursor
 	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
@@ -309,15 +201,24 @@ def predict(time_step,begin,end):
 	for market in markets:
 		code_list = getCodeList(market)
 		for code in code_list:
-			predict_lstm(code,time_step,begin,end)
+			predict_lstm(code,time_step,term,begin,end)
 
 	#关闭数据库连接
 	cursor.close()
 	conn.close()
 
+def db_connect():
+	global conn
+	global cursor
+	conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
+	cursor = conn.cursor()
 
+def db_close():
+	cursor.close()
+	conn.close()
 
 
 if __name__ == '__main__':
-	#predict(15,'2005-01-01','2014-12-31')
-	predict_lstm('600000',15,'2014-01-01','2014-12-31')
+	db_connect()
+	predict_lstm('600000',30,'30','2016-01-01','2016-12-31')
+	db_close()
