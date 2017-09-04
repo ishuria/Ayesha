@@ -6,6 +6,10 @@ import MySQLdb as mdb
 import stock_sql
 import os
 import datetime
+import gc
+
+
+import psutil
 
 #市场
 markets = ['sh','sz']
@@ -21,6 +25,9 @@ lr=0.0006
 
 conn = None
 cursor = None
+
+train_x = []
+train_y = []
 
 #一次性取出所有数据
 def get_all_train_data(code,term,begin,end):
@@ -104,9 +111,14 @@ def get_all_train_data(code,term,begin,end):
 
 #从内存中取出训练要用的数据
 def get_train_data(stock_history_list,stock_price_list,batch_size,time_step,term,date):
+    global train_x
+    global train_y
+    #获取当前运行的pid  
+    p1=psutil.Process(os.getpid())
     sub_history_list = []
     sub_price_list = []
 
+    print "percent : %.2f%%" % (p1.memory_percent())
 
     start_collect = False
     data_count = 0
@@ -143,30 +155,39 @@ def get_train_data(stock_history_list,stock_price_list,batch_size,time_step,term
                 sub_price_list = reverse(sub_price_list)
                 break
         
-
+    print "percent after start_collect: %.2f%%" % (p1.memory_percent())
 
     #标准化
     normalized_stock_history_list = (sub_history_list - np.mean(sub_history_list,axis=0)) / np.std(sub_history_list,axis=0)
     normalized_stock_price_list = (sub_price_list - np.mean(sub_price_list,axis=0)) / np.std(sub_price_list,axis=0)
+
+    print "percent after normalized: %.2f%%" % (p1.memory_percent())
 
     #训练集输入
     train_x = []
     #训练集输出
     train_y = []
 
-    batch_index=[]
+    batch_index = []
+
+    gc.collect()
+
     for i in range(len(normalized_stock_history_list) - time_step):
-       if i % batch_size==0:
-           batch_index.append(i)
-       x=normalized_stock_history_list[i:i+time_step,:6]
-       #print(x)
-       y=normalized_stock_price_list[i:i+time_step,0,np.newaxis]
+        if i % batch_size==0:
+            batch_index.append(i)
+        x=normalized_stock_history_list[i:i+time_step,:6]
+        #print(x)
+        y=normalized_stock_price_list[i:i+time_step,0,np.newaxis]
        
-       #print(y)
-       train_x.append(x.tolist())
-       train_y.append(y.tolist())
+        #print(y)
+        train_x.append(x.tolist())
+        train_y.append(y.tolist())
 
     batch_index.append((len(normalized_stock_history_list)-time_step))
+
+    
+    print "percent after batch_index: %.2f%%" % (p1.memory_percent())
+
     return batch_index,train_x,train_y
 
 
@@ -280,6 +301,7 @@ def get_train_data(code,batch_size,time_step,term,date):
 
 
 def train_lstm(code,batch_size,time_step,term,begin,end):
+    
     with tf.variable_scope(code + '_' + term, reuse=None):
         X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
         Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
@@ -329,17 +351,20 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
             stock_history_list,stock_price_list = get_all_train_data(code,term,begin,end)
 
             while begindate < enddate:
-                batch_index,train_x,train_y=get_train_data(stock_history_list,stock_price_list,batch_size,time_step,term,begindate.strftime('%Y-%m-%d'))
-                print('training data begin with '+begindate.strftime('%Y-%m-%d') + ', size = ' + str(config.lstm_data_size))
+                date = begindate.strftime('%Y-%m-%d')
+                #print "percent: %.2f%%" % (p1.memory_percent())
+                batch_index,train_x,train_y=get_train_data(stock_history_list,stock_price_list,batch_size,time_step,term,date)
+                #print "percent after get_train_data: %.2f%%" % (p1.memory_percent())
+                print('training data begin with '+date + ', size = ' + str(config.lstm_data_size))
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
-                if train_count != 0 and train_count % 200==0:
+                #print "percent after training: %.2f%%" % (p1.memory_percent())
+                if train_count != 0 and train_count % 200 == 0:
                     print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=train_count))
                 begindate += datetime.timedelta(days=1)
                 train_count += 1
 
             print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=train_count))
-                
 
 #训练函数
 def train(batch_size,time_step,term,begin,end):
@@ -371,7 +396,8 @@ def db_close():
 if __name__ == '__main__':
     db_connect()
     train_lstm('600000',30 , 30 , '30' , '2005-01-01' , '2015-12-31')
-    #train( 90 , 90 , '90' , '2005-01-01' , '2014-12-31' )
-    #train( 180 , 180 , '180' , '2005-01-01' , '2014-12-31' )
-    #train( 360 , 360 , '360' , '2005-01-01' , '2014-12-31' )
+    #train( 30 , 30 , '30' , '2005-01-01' , '2005-01-01' )
+    #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
+    #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )
+    #train( 360 , 360 , '360' , '2005-01-01' , '2005-01-01' )
     db_close()
