@@ -1,4 +1,4 @@
-﻿# -*- coding: UTF-8 -*-  
+# -*- coding: UTF-8 -*-  
 import numpy as np
 import tensorflow as tf
 import config
@@ -7,6 +7,7 @@ import stock_sql
 import os
 import datetime
 import gc
+import sys
 
 
 import psutil
@@ -300,7 +301,16 @@ def get_train_data(code,batch_size,time_step,term,date):
 '''
 
 
-def train_lstm(code,batch_size,time_step,term,begin,end):
+def train_lstm(code,batch_size,time_step,term,begin,end,need_restore):
+    code_path = '/home/ayesha/data/models/'+code
+    model_path = code_path + '/' + term
+    if not os.path.exists(code_path):
+        os.mkdir(code_path)
+
+    if not os.path.exists(model_path):
+        os.mkdir(model_path)
+
+
     
     with tf.variable_scope(code + '_' + term, reuse=None):
         X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
@@ -332,17 +342,12 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
         train_op=tf.train.AdamOptimizer(lr).minimize(loss)
         saver=tf.train.Saver(tf.global_variables(),max_to_keep=0)
+        module_file = tf.train.latest_checkpoint(model_path)
         with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-
-            code_path = '/home/ayesha/data/models/'+code
-            model_path = code_path + '/' + term
-            if not os.path.exists(code_path):
-                os.mkdir(code_path)
-
-            if not os.path.exists(model_path):
-                os.mkdir(model_path)
-
+            if need_restore:
+                saver.restore(sess, module_file) 
+            else:
+                sess.run(tf.global_variables_initializer())
             
             begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
             enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
@@ -350,7 +355,7 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
 
             stock_history_list,stock_price_list = get_all_train_data(code,term,begin,end)
 
-            while begindate < enddate:
+            while begindate <= enddate:
                 date = begindate.strftime('%Y-%m-%d')
                 #print "percent: %.2f%%" % (p1.memory_percent())
                 batch_index,train_x,train_y=get_train_data(stock_history_list,stock_price_list,batch_size,time_step,term,date)
@@ -371,7 +376,7 @@ def train(batch_size,time_step,term,begin,end):
     for market in markets:
         code_list = getCodeList(market)
         for code in code_list:
-            train_lstm(code,batch_size,time_step,term,begin,end)
+            train_lstm(code,batch_size,time_step,term,begin,end,False)
 
 def getCodeList(market):
     stock_list = []
@@ -395,9 +400,24 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
-    train_lstm('600000',30 , 30 , '30' , '2005-01-01' , '2005-01-31')
+    #train_lstm('600000',30 , 30 , '30' , '2005-01-01' , '2005-01-31',False)
     #train( 30 , 30 , '30' , '2005-01-01' , '2005-01-01' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )
     #train( 360 , 360 , '360' , '2005-01-01' , '2005-01-01' )
+    code = sys.argv[1]
+    print('1 '+code)
+    batch_size = sys.argv[2]
+    print('2 '+batch_size)
+    time_step = sys.argv[3]
+    print('3 '+time_step)
+    term = sys.argv[4]
+    print('4 '+term)
+    begin = sys.argv[5]
+    print('5 '+begin)
+    end = sys.argv[6]
+    print('6 '+end)
+    need_restore = sys.argv[7]
+    print('7 '+need_restore)
+    train_lstm(code, int(batch_size) , int(time_step) , term , begin , end,need_restore==str(True))
     db_close()
