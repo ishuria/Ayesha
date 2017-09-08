@@ -6,11 +6,6 @@ import MySQLdb as mdb
 import stock_sql
 import os
 import datetime
-import gc
-import sys
-
-
-import psutil
 
 #市场
 markets = ['sh','sz']
@@ -26,6 +21,10 @@ lr=0.0006
 
 conn = None
 cursor = None
+
+
+
+'''
 
 train_x = []
 train_y = []
@@ -201,7 +200,7 @@ def reverse(arr):
 
 '''
 #获取训练集
-def get_train_data(code,batch_size,time_step,term,date):
+def get_train_data(code,batch_size,time_step,term,begin,end):
     stock_history_list = []
     stock_price_list = []
     cursor.execute(''.join([
@@ -224,6 +223,7 @@ def get_train_data(code,batch_size,time_step,term,date):
             '        AND a.date = t.date ',
             '        WHERE ',
             '            t.date <= %s ',
+            '        AND t.date >= %s ',
             '        AND t.`code` = %s ',
             '        ORDER BY ',
             '            t.date DESC ',
@@ -232,7 +232,7 @@ def get_train_data(code,batch_size,time_step,term,date):
             '    ) tt ',
             'ORDER BY ',
             '    tt.date ASC '
-        ]) , [date,code])
+        ]) , [end,begin,code])
     results = cursor.fetchall()
     for result in results:
         stock_history = []
@@ -298,10 +298,10 @@ def get_train_data(code,batch_size,time_step,term,date):
 
     batch_index.append((len(normalized_stock_history_list)-time_step))
     return batch_index,train_x,train_y
-'''
 
 
-def train_lstm(code,batch_size,time_step,term,begin,end,need_restore):
+
+def train_lstm(code,batch_size,time_step,term,begin,end):
     code_path = '/home/ayesha/data/models/'+code
     model_path = code_path + '/' + term
     if not os.path.exists(code_path):
@@ -310,8 +310,8 @@ def train_lstm(code,batch_size,time_step,term,begin,end,need_restore):
     if not os.path.exists(model_path):
         os.mkdir(model_path)
 
+    batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,begin,end)
 
-    
     with tf.variable_scope(code + '_' + term, reuse=None):
         X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
         Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
@@ -342,41 +342,21 @@ def train_lstm(code,batch_size,time_step,term,begin,end,need_restore):
         loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
         train_op=tf.train.AdamOptimizer(lr).minimize(loss)
         saver=tf.train.Saver(tf.global_variables(),max_to_keep=0)
-        module_file = tf.train.latest_checkpoint(model_path)
+
         with tf.Session() as sess:
-            if need_restore:
-                saver.restore(sess, module_file) 
-            else:
-                sess.run(tf.global_variables_initializer())
-            
-            begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
-            enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
-            train_count = 0
-
-            stock_history_list,stock_price_list = get_all_train_data(code,term,begin,end)
-
-            while begindate <= enddate:
-                date = begindate.strftime('%Y-%m-%d')
-                #print "percent: %.2f%%" % (p1.memory_percent())
-                batch_index,train_x,train_y=get_train_data(stock_history_list,stock_price_list,batch_size,time_step,term,date)
-                #print "percent after get_train_data: %.2f%%" % (p1.memory_percent())
-                print('training data begin with '+date + ', size = ' + str(config.lstm_data_size))
+            sess.run(tf.global_variables_initializer())
+            for i in range(2001):
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
-                #print "percent after training: %.2f%%" % (p1.memory_percent())
-                if train_count != 0 and train_count % 200 == 0:
-                    print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=train_count))
-                begindate += datetime.timedelta(days=1)
-                train_count += 1
-
-            print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=train_count))
+                if i % 200==0:
+                    print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=i))
 
 #训练函数
 def train(batch_size,time_step,term,begin,end):
     for market in markets:
         code_list = getCodeList(market)
         for code in code_list:
-            train_lstm(code,batch_size,time_step,term,begin,end,False)
+            train_lstm(code,batch_size,time_step,term,begin,end)
 
 def getCodeList(market):
     stock_list = []
@@ -400,11 +380,12 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
-    #train_lstm('600000',30 , 30 , '30' , '2005-01-01' , '2005-01-31',False)
-    #train( 30 , 30 , '30' , '2005-01-01' , '2005-01-01' )
+    #train_lstm('600000',30 , 30 , '30' , '2005-01-01' , '2016-12-31')
+    train( 30 , 30 , '30' , '2005-01-01' , '2016-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )
     #train( 360 , 360 , '360' , '2005-01-01' , '2005-01-01' )
+    '''
     code = sys.argv[1]
     print('1 '+code)
     batch_size = sys.argv[2]
@@ -420,4 +401,5 @@ if __name__ == '__main__':
     need_restore = sys.argv[7]
     print('7 '+need_restore)
     train_lstm(code, int(batch_size) , int(time_step) , term , begin , end,need_restore==str(True))
+    '''
     db_close()
