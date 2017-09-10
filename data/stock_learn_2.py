@@ -6,13 +6,14 @@ import MySQLdb as mdb
 import stock_sql
 import os
 import datetime
+import decimal  
 
 #市场
 markets = ['sh','sz']
 
 
 #定义常量
-rnn_unit=30
+rnn_unit=50
 input_size=6
 output_size=1
 #学习率
@@ -22,6 +23,8 @@ lr=0.0006
 conn = None
 cursor = None
 
+LEARNING_RATE_BASE = 0.8
+LEARNING_RATE_DECAY = 0.99
 
 
 '''
@@ -261,7 +264,6 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
         if result[5] is None:
             continue
         stock_history.append(result[5])
-        
 
 
         if result[6] is None:
@@ -271,13 +273,14 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
         stock_history_list.append(stock_history)
         stock_price_list.append(stock_price)
 
-
-
     conn.commit()
 
-    #标准化
-    normalized_stock_history_list = (stock_history_list - np.mean(stock_history_list,axis=0)) / np.std(stock_history_list,axis=0)
-    normalized_stock_price_list = (stock_price_list - np.mean(stock_price_list,axis=0)) / np.std(stock_price_list,axis=0)
+
+
+    stock_history_arr = np.array(stock_history_list)
+    stock_price_arr = np.array(stock_price_list)
+    #normalized_stock_history_list = (stock_history_list - np.mean(stock_history_list,axis=0)) / np.std(stock_history_list,axis=0)
+    #normalized_stock_price_list = (stock_price_list - np.mean(stock_price_list,axis=0)) / np.std(stock_price_list,axis=0)
 
     #训练集输入
     train_x = []
@@ -285,36 +288,40 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
     train_y = []
 
     batch_index=[]
-    for i in range(len(normalized_stock_history_list) - time_step):
+    for i in range(len(stock_history_arr) - time_step):
        if i % batch_size==0:
            batch_index.append(i)
-       x=normalized_stock_history_list[i:i+time_step,:6]
+       x = stock_history_arr[i:i+time_step,:6]
+       #x = stock_history_list[i:i+time_step]
+       #标准化，在每一个time_step组内进行标准化
+       x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
        #print(x)
-       y=normalized_stock_price_list[i:i+time_step,0,np.newaxis]
+       y = stock_price_arr[i:i+time_step,0,np.newaxis]
+       #y = stock_price_list[i:i+time_step,np.newaxis]
+       y = (y - np.mean(y,axis=0)) / np.std(y,axis=0)
        
        #print(y)
        train_x.append(x.tolist())
        train_y.append(y.tolist())
 
-    batch_index.append((len(normalized_stock_history_list)-time_step))
+    batch_index.append((len(stock_history_arr)-time_step))
     return batch_index,train_x,train_y
 
 
 
 def train_lstm(code,batch_size,time_step,term,begin,end):
-    code_path = '/home/ayesha/data/models/'+code
-    model_path = code_path + '/' + term
-    if not os.path.exists(code_path):
-        os.mkdir(code_path)
-
-    if not os.path.exists(model_path):
-        os.mkdir(model_path)
-
-    batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,begin,end)
-
     with tf.variable_scope(code + '_' + term, reuse=None):
+        code_path = '/home/ayesha/data/models/'+code
+        model_path = code_path + '/' + term
+        if not os.path.exists(code_path):
+            os.mkdir(code_path)
+
+        if not os.path.exists(model_path):
+            os.mkdir(model_path)
+
         X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
         Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
+        batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,begin,end)
         weights={
              'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
              'out':tf.Variable(tf.random_normal([rnn_unit,1]))
@@ -340,8 +347,14 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
 
         #损失函数
         loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
+
+        #learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, 2001 * (len(batch_index)-1), len(batch_index)-1, LEARNING_RATE_DECAY)
+
+
         train_op=tf.train.AdamOptimizer(lr).minimize(loss)
         saver=tf.train.Saver(tf.global_variables(),max_to_keep=0)
+
+        
 
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -380,7 +393,7 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
-    #train_lstm('600000',30 , 30 , '30' , '2005-01-01' , '2016-12-31')
+    #train_lstm('600000',50 , 30 , '30' , '2005-01-01' , '2016-12-31')
     train( 30 , 30 , '30' , '2005-01-01' , '2016-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )

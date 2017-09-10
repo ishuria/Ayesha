@@ -11,7 +11,7 @@ cursor = None
 
 input_size=6
 
-rnn_unit=30
+rnn_unit=50
 
 
 #获取测试集
@@ -73,26 +73,50 @@ def get_test_data(code,time_step,term,date):
 		stock_history.append(float(result[4]))
 		#circulation_value:14
 		stock_history.append(float(result[5]))
-		#future_price
-		stock_history.append(float(result[6]))
 		stock_history_list.append(stock_history)
+
+
+		#future_price
+		stock_price.append((result[6]))
+		stock_price_list.append(stock_price)
 	conn.commit()
 
-	#标准化
-	mean=np.mean(stock_history_list,axis=0)
-	std=np.std(stock_history_list,axis=0)
-	normalized_test_data=(stock_history_list-mean)/std
 
-	sample_size=(len(normalized_test_data)+time_step-1)/time_step  #有size个sample
+
+	stock_history_arr = np.array(stock_history_list)
+
+	#标准化
+	#mean=np.mean(stock_history_list,axis=0)
+	#std=np.std(stock_history_list,axis=0)
+	#normalized_test_data=(stock_history_list-mean)/std
+
+	sample_size=(len(stock_history_arr)+time_step-1)/time_step  #有size个sample
 
 
 	#数据不一定需要有future_price
 
+	mean = None
+	std = None
 	for i in range(sample_size-1):
-	   x=normalized_test_data[i*time_step:(i+1)*time_step,:6]
-	   test_x.append(x.tolist())
-	test_x.append((normalized_test_data[(i+1)*time_step:,:6]).tolist())
-	future_price = stock_history_list[-1][6]
+		x = stock_history_arr[i*time_step:(i+1)*time_step,:6]
+		x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
+		test_x.append(x.tolist())
+
+	x = stock_history_arr[(i+1)*time_step:,:6]
+	mean=np.mean(stock_history_arr[(i+1)*time_step:,:6],axis=0)
+	std=np.std(stock_history_arr[(i+1)*time_step:,:6],axis=0)
+	x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
+
+	#标准差和方差均取与预测数据时间上最接近的一组即可
+	
+	test_x.append(x.tolist())
+
+	#未来的真实值，可能为空
+	future_price = stock_price_list[-1][0]
+
+
+
+
 	return mean,std,test_x,future_price
 
 def getCodeList(market):
@@ -104,10 +128,6 @@ def getCodeList(market):
 	for result in results:
 		stock_list.append(result[6])
 	return stock_list
-
-#——————————————————定义神经网络变量——————————————————
-def lstm(X):	 
-	return pred,final_states
 
 
 def predict_lstm(code,time_step,term,begin,end):
@@ -138,24 +158,28 @@ def predict_lstm(code,time_step,term,begin,end):
 		b_out=biases['out']
 		pred=tf.matmul(output,w_out)+b_out
 		saver=tf.train.Saver()
-		with tf.Session() as sess:
-			#参数恢复
-			code_path = '/home/ayesha/data/models/'+code
-			model_path = code_path + '/' + term
-			module_file = tf.train.latest_checkpoint(model_path)
-			saver.restore(sess, module_file)
 
-			begindate=datetime.datetime.strptime(begin,'%Y-%m-%d')
-			enddate=datetime.datetime.strptime(end,'%Y-%m-%d')
+		begindate=datetime.datetime.strptime(begin,'%Y-%m-%d')
+		enddate=datetime.datetime.strptime(end,'%Y-%m-%d')
 
-			while begindate<=enddate:
-				date = begindate.strftime('%Y-%m-%d')
+		while begindate<=enddate:
+			date = begindate.strftime('%Y-%m-%d')
 
-				mean,std,test_x,future_price = get_test_data(code,time_step,term,date)
+			mean,std,test_x,future_price = get_test_data(code,time_step,term,date)
+			if len(test_x) == 0:
+				begindate+=datetime.timedelta(days=1)
+				continue
 
-				if len(test_x) == 0:
-					begindate+=datetime.timedelta(days=1)
-					continue
+
+			with tf.Session() as sess:
+				#参数恢复
+				code_path = '/home/ayesha/data/models/'+code
+				model_path = code_path + '/' + term
+				module_file = tf.train.latest_checkpoint(model_path)
+				saver.restore(sess, module_file)
+
+
+				
 
 				test_predict=[]
 				for step in range(len(test_x)-1):
@@ -173,7 +197,7 @@ def predict_lstm(code,time_step,term,begin,end):
 						est_price,
 						future_price],term)
 				
-				begindate+=datetime.timedelta(days=1)
+			begindate+=datetime.timedelta(days=1)
 
 
 def insert_or_update_data(params,term):
@@ -220,5 +244,5 @@ def db_close():
 
 if __name__ == '__main__':
 	db_connect()
-	predict_lstm('600000',30,'30','2016-01-01','2016-12-31')
+	predict_lstm('600000',30,'30','2017-01-01','2017-10-01')
 	db_close()
