@@ -21,11 +21,8 @@ lr=0.0006
 conn = None
 cursor = None
 
-LEARNING_RATE_BASE = 0.8
-LEARNING_RATE_DECAY = 0.99
-
-#获取训练集
-def get_train_data(code,batch_size,time_step,term,begin,end):
+#获取训练集，取得输入日期前的数据，数量上限由参数config.lstm_data_size决定
+def get_train_data(code,batch_size,time_step,term,date):
     stock_history_list = []
     stock_price_list = []
     cursor.execute(''.join([
@@ -48,7 +45,6 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
             '        AND a.date = t.date ',
             '        WHERE ',
             '            t.date <= %s ',
-            '        AND t.date >= %s ',
             '        AND t.`code` = %s ',
             '        ORDER BY ',
             '            t.date DESC ',
@@ -57,7 +53,7 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
             '    ) tt ',
             'ORDER BY ',
             '    tt.date ASC '
-        ]) , [end,begin,code])
+        ]) , [date,code])
     results = cursor.fetchall()
     for result in results:
         stock_history = []
@@ -110,15 +106,11 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
        if i % batch_size==0:
            batch_index.append(i)
        x = stock_history_arr[i:i+time_step,:6]
-       #x = stock_history_list[i:i+time_step]
        #标准化，在每一个time_step组内进行标准化
        x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
-       #print(x)
        y = stock_price_arr[i:i+time_step,0,np.newaxis]
-       #y = stock_price_list[i:i+time_step,np.newaxis]
        y = (y - np.mean(y,axis=0)) / np.std(y,axis=0)
        
-       #print(y)
        train_x.append(x.tolist())
        train_y.append(y.tolist())
 
@@ -137,9 +129,12 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         if not os.path.exists(model_path):
             os.mkdir(model_path)
 
+        model_file = model_path + '/checkpoint'
+        model_file_exists = os.path.exists(model_file)
+
         X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
         Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
-        batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,begin,end)
+        
         weights={
              'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
              'out':tf.Variable(tf.random_normal([rnn_unit,1]))
@@ -166,21 +161,28 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         #损失函数
         loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
 
-        #learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, 2001 * (len(batch_index)-1), len(batch_index)-1, LEARNING_RATE_DECAY)
-
-
         train_op=tf.train.AdamOptimizer(lr).minimize(loss)
         saver=tf.train.Saver(tf.global_variables(),max_to_keep=0)
 
-        
 
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            for i in range(2001):
+
+        enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
+        begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
+        while begindate <= enddate:
+            date = begindate.strftime('%Y-%m-%d')
+            batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,date)
+            with tf.Session() as sess:
+                if model_file_exists:
+                    module_file = tf.train.latest_checkpoint(model_path)
+                    saver.restore(sess, module_file) 
+                else:
+                    sess.run(tf.global_variables_initializer())
+
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
-                if i % 200==0:
-                    print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=i))
+                print("save model : ", saver.save(sess, model_path + '/stock.model'))
+
+            begindate = begindate + datetime.timedelta(days=1)
 
 #训练函数
 def train(batch_size,time_step,term,begin,end):
@@ -210,8 +212,8 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
-    #train_lstm('600000',50 , 30 , '30' , '2005-01-01' , '2016-12-31')
-    train( 30 , 30 , '30' , '2005-01-01' , '2016-12-31' )
+    train_lstm('600000',50 , 30 , '30' , '2005-01-01' , '2012-12-31')
+    #train( 30 , 30 , '30' , '2005-01-01' , '2012-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )
     #train( 360 , 360 , '360' , '2005-01-01' , '2005-01-01' )
