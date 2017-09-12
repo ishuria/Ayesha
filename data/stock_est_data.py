@@ -11,7 +11,7 @@ cursor = None
 
 input_size=6
 
-rnn_unit=50
+rnn_unit=30
 
 
 #获取测试集
@@ -52,7 +52,7 @@ def get_test_data(code,time_step,term,date):
 			'		ORDER BY ',
 			'			t.date DESC ',
 			'		LIMIT 0, ',
-			'		2000 ',
+			'		' + str(2000) + ' ',
 			'	) tt ',
 			'ORDER BY ',
 			'	tt.date ASC '
@@ -85,11 +85,40 @@ def get_test_data(code,time_step,term,date):
 
 	stock_history_arr = np.array(stock_history_list)
 
+	sample_size=(len(stock_history_arr)+time_step-1)/time_step  #有size个sample
+
+
+	#数据不一定需要有future_price
+	mean = None
+	std = None
+	for i in range(sample_size-1):
+		x = stock_history_arr[i*time_step:(i+1)*time_step,:6]
+		test_x.append(x.tolist())
+
+	x = stock_history_arr[(i+1)*time_step:,:6]
+	mean=np.mean(stock_history_arr[(i+1)*time_step:,:6],axis=0)
+	std=np.std(stock_history_arr[(i+1)*time_step:,:6],axis=0)
+
+	#标准差和方差均取与预测数据时间上最接近的一组即可
+	
+	test_x.append(x.tolist())
+
+	#未来的真实值，可能为空
+	future_price = stock_price_list[-1][0]
+
+
+
+
+	return mean,std,test_x,future_price
+
+
+
 	#标准化
 	#mean=np.mean(stock_history_list,axis=0)
 	#std=np.std(stock_history_list,axis=0)
 	#normalized_test_data=(stock_history_list-mean)/std
 
+	'''
 	sample_size=(len(stock_history_arr)+time_step-1)/time_step  #有size个sample
 
 
@@ -118,6 +147,7 @@ def get_test_data(code,time_step,term,date):
 
 
 	return mean,std,test_x,future_price
+	'''
 
 def getCodeList(market):
 	global conn
@@ -187,7 +217,7 @@ def predict_lstm(code,time_step,term,begin,end):
 					predict=prob.reshape((-1))
 					test_predict.extend(predict)
 				#预测值
-				test_predict=np.array(test_predict)*std[2]+mean[2]
+				#test_predict=np.array(test_predict)*std[2]+mean[2]
 				est_price = test_predict[-1]
 
 				print('insert or update estimate data, code = '+code+', date = '+date +', term = ' + term)
@@ -244,7 +274,7 @@ def db_close():
 
 if __name__ == '__main__':
 	db_connect()
-	predict_lstm('600000',30,'30','2017-01-01','2017-03-01')
+	predict_lstm('600000',30,'30','2005-12-01','2005-12-31')
 	'''
 	predict_lstm('600009',30,'30','2017-01-01','2017-03-01')
 	predict_lstm('600010',30,'30','2017-01-01','2017-03-01')

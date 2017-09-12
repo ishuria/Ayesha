@@ -7,12 +7,13 @@ import stock_sql
 import os
 import datetime
 import decimal  
+import sys
 
 #市场
 markets = ['sh','sz']
 
 #定义常量
-rnn_unit=50
+rnn_unit=30
 input_size=6
 output_size=1
 #学习率
@@ -20,6 +21,22 @@ lr=0.0006
 
 conn = None
 cursor = None
+
+
+init_scale = 0.1        # 相关参数的初始值为随机均匀分布，范围是[-init_scale,+init_scale]
+learning_rate = 1.0     # 学习速率,在文本循环次数超过max_epoch以后会逐渐降低
+max_grad_norm = 5       # 用于控制梯度膨胀，如果梯度向量的L2模超过max_grad_norm，则等比例缩小
+num_layers = 2          # lstm层数
+num_steps = 20          # 单个数据中，序列的长度。
+hidden_size = 200       # 隐藏层中单元数目
+max_epoch = 4           # epoch<max_epoch时，lr_decay值=1,epoch>max_epoch时,lr_decay逐渐减小
+max_max_epoch = 13      # 指的是整个文本循环次数。
+keep_prob = 1.0         # 用于dropout.每批数据输入时神经网络中的每个单元会以1-keep_prob的概率不工作，可以防止过拟合
+lr_decay = 0.5          # 学习速率衰减
+batch_size = 20         # 每批数据的规模，每批有20个。
+vocab_size = 10000      # 词典规模，总共10K个词
+
+
 
 #获取训练集，取得输入日期前的数据，数量上限由参数config.lstm_data_size决定
 def get_train_data(code,batch_size,time_step,term,date):
@@ -102,23 +119,21 @@ def get_train_data(code,batch_size,time_step,term,date):
     train_y = []
 
     batch_index=[]
+
     for i in range(len(stock_history_arr) - time_step):
-       if i % batch_size==0:
-           batch_index.append(i)
-       x = stock_history_arr[i:i+time_step,:6]
-       #标准化，在每一个time_step组内进行标准化
-       x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
-       y = stock_price_arr[i:i+time_step,0,np.newaxis]
-       y = (y - np.mean(y,axis=0)) / np.std(y,axis=0)
+        if i % batch_size==0:
+            batch_index.append(i)
+        x = stock_history_arr[i:i+time_step,:6]
+        y = stock_price_arr[i:i+time_step,0,np.newaxis]
        
-       train_x.append(x.tolist())
-       train_y.append(y.tolist())
+        train_x.append(x.tolist())
+        train_y.append(y.tolist())
 
     batch_index.append((len(stock_history_arr)-time_step))
     return batch_index,train_x,train_y
 
 
-
+'''
 def train_lstm(code,batch_size,time_step,term,begin,end):
     with tf.variable_scope(code + '_' + term, reuse=None):
         code_path = '/home/ayesha/data/models/'+code
@@ -150,8 +165,75 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
         input_rnn=tf.matmul(input,w_in)+b_in
         input_rnn=tf.reshape(input_rnn,[-1,time_step_tensor,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
-        cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
+        cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit,state_is_tuple=True)
         init_state=cell.zero_state(batch_size,dtype=tf.float32)
+        output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
+        output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
+        w_out=weights['out']
+        b_out=biases['out']
+        pred=tf.matmul(output,w_out)+b_out
+
+        #损失函数
+        loss=tf.reduce_mean(tf.square(tf.reshape(pred[-1],[-1])-tf.reshape(Y[-1], [-1])))
+
+        global_step = tf.Variable(0,name='global_step',trainable=False)
+        train_op=tf.train.AdamOptimizer(lr).minimize(loss,global_step=global_step)
+        
+        enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
+        begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
+
+        
+        
+        with tf.Session() as sess:
+            saver=tf.train.Saver()
+            sess.run(tf.global_variables_initializer())
+
+            while begindate <= enddate:
+                date = begindate.strftime('%Y-%m-%d')
+                batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,date)
+                for step in range(len(batch_index)-1):
+                    final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
+                print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=global_step) , " date : " , date)
+
+                begindate = begindate + datetime.timedelta(days=1)
+'''
+
+
+
+def train_lstm_daily(code,batch_size,time_step,term,date):
+    with tf.variable_scope(code + '_' + term, reuse=None):
+        code_path = '/home/ayesha/data/models/'+code
+        model_path = code_path + '/' + term
+        if not os.path.exists(code_path):
+            os.mkdir(code_path)
+
+        if not os.path.exists(model_path):
+            os.mkdir(model_path)
+
+        model_file = model_path + '/checkpoint'
+        model_file_exists = os.path.exists(model_file)
+
+        X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
+        Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
+        
+        weights={
+             'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
+             'out':tf.Variable(tf.random_normal([rnn_unit,1]))
+            }
+        biases={
+                'in':tf.Variable(tf.constant(0.1,shape=[rnn_unit,])),
+                'out':tf.Variable(tf.constant(0.1,shape=[1,]))
+               }
+        batch_size_tensor=tf.shape(X)[0]
+        time_step_tensor=tf.shape(X)[1]
+        w_in=weights['in']
+        b_in=biases['in']  
+        input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
+        input_rnn=tf.matmul(input,w_in)+b_in
+        input_rnn=tf.reshape(input_rnn,[-1,time_step_tensor,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
+        cell = tf.nn.rnn_cell.BasicLSTMCell(rnn_unit,state_is_tuple=True)
+
+        init_state=cell.zero_state(batch_size_tensor,dtype=tf.float32)
         output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
         output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
         w_out=weights['out']
@@ -161,28 +243,23 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         #损失函数
         loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
 
-        train_op=tf.train.AdamOptimizer(lr).minimize(loss)
-        saver=tf.train.Saver(tf.global_variables(),max_to_keep=0)
+        global_step = tf.Variable(0,name='global_step',trainable=False)
+        train_op=tf.train.AdamOptimizer(lr).minimize(loss,global_step=global_step)
+        
+        batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,date)
+        saver=tf.train.Saver()
+        with tf.Session() as sess:
+            if model_file_exists:
+                module_file = tf.train.latest_checkpoint(model_path)
+                saver.restore(sess, module_file)
+                print('restore model')
+            else:
+                sess.run(tf.global_variables_initializer())
+                print('initialize model')
 
-
-
-        enddate = datetime.datetime(int(end[0:4]),int(end[5:7]),int(end[8:10]))
-        begindate = datetime.datetime(int(begin[0:4]),int(begin[5:7]),int(begin[8:10]))
-        while begindate <= enddate:
-            date = begindate.strftime('%Y-%m-%d')
-            batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,date)
-            with tf.Session() as sess:
-                if model_file_exists:
-                    module_file = tf.train.latest_checkpoint(model_path)
-                    saver.restore(sess, module_file) 
-                else:
-                    sess.run(tf.global_variables_initializer())
-
-                for step in range(len(batch_index)-1):
-                    final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
-                print("save model : ", saver.save(sess, model_path + '/stock.model'))
-
-            begindate = begindate + datetime.timedelta(days=1)
+            for step in range(len(batch_index)-1):
+                final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
+            print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=global_step) , " date : " , date)
 
 #训练函数
 def train(batch_size,time_step,term,begin,end):
@@ -212,7 +289,15 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
-    train_lstm('600000',50 , 30 , '30' , '2005-01-01' , '2012-12-31')
+    #train_lstm('600000',30 , 30 , '30' , '2005-01-01' , '2012-12-31')
+    ''''''
+    code = sys.argv[1]
+    batch_size = sys.argv[2]
+    time_step = sys.argv[3]
+    term = sys.argv[4]
+    date = sys.argv[5]
+    train_lstm_daily(code,int(batch_size) , int(time_step) , term , date )
+    
     #train( 30 , 30 , '30' , '2005-01-01' , '2012-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )

@@ -179,7 +179,7 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
             for i in range(2001):
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
-                if i % 200==0:
+                if i % 10==0:
                     print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=i))
 
 #训练函数
@@ -210,8 +210,8 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
-    #train_lstm('600000',50 , 30 , '30' , '2005-01-01' , '2016-12-31')
-    train( 30 , 30 , '30' , '2005-01-01' , '2016-12-31' )
+    train_lstm('600000',50 , 30 , '30' , '2005-01-01' , '2016-12-31')
+    #train( 30 , 30 , '30' , '2005-01-01' , '2016-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )
     #train( 360 , 360 , '360' , '2005-01-01' , '2005-01-01' )
