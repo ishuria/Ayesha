@@ -6,13 +6,13 @@ import MySQLdb as mdb
 import stock_sql
 import os
 import datetime
-import decimal  
+import decimal
 
 #市场
 markets = ['sh','sz']
 
 #定义常量
-rnn_unit=30
+rnn_unit=100
 input_size=6
 output_size=1
 #学习率
@@ -89,7 +89,6 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
             continue
         stock_history.append(result[5])
 
-
         if result[6] is None:
             continue
         stock_price.append(result[6])
@@ -150,15 +149,15 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
                 'in':tf.Variable(tf.constant(0.1,shape=[rnn_unit,])),
                 'out':tf.Variable(tf.constant(0.1,shape=[1,]))
                }
-        batch_size=tf.shape(X)[0]
-        time_step_tensor=tf.shape(X)[1]
+        batch_size_variable=tf.shape(X)[0]
+        time_step_variable=tf.shape(X)[1]
         w_in=weights['in']
         b_in=biases['in']  
         input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
         input_rnn=tf.matmul(input,w_in)+b_in
-        input_rnn=tf.reshape(input_rnn,[-1,time_step_tensor,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
+        input_rnn=tf.reshape(input_rnn,[-1,time_step_variable,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
         cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
-        init_state=cell.zero_state(batch_size,dtype=tf.float32)
+        init_state=cell.zero_state(batch_size_variable,dtype=tf.float32)
         output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
         output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
         w_out=weights['out']
@@ -211,7 +210,7 @@ def db_close():
 if __name__ == '__main__':
     db_connect()
     #train_lstm(code,batch_size,time_step,term,begin,end):
-    train_lstm('600000',50 , 30 , '30' , '2005-01-01' , '2016-12-31')
+    train_lstm('600000',80 , 300 , '30' , '2005-01-01' , '2012-12-31')
     #train( 30 , 30 , '30' , '2005-01-01' , '2016-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )
