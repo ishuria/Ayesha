@@ -156,11 +156,11 @@ def calcIncrease(prev_value,curr_value):
 def calcPolyfit(dataX,dataY,degree):
 	params = np.polyfit(dataX, dataY, degree)
 	level = len(params)
-	x = dataX[len(dataX)-1]
+	x = dataX[-1]
 	y = 0;
 	for i in range(0, level, 1):
-		y = y + params[i]*math.pow(x, level - i - 1)
-	prev_value = dataY[0]
+		y = y + params[i]*math.pow(x * 2-1, level - i - 1)
+	prev_value = dataY[-1]
 	return format((y - prev_value) / prev_value , '0.4f')
 
 #这里获取的是倒转数组，因此需要reverse
@@ -270,4 +270,4 @@ def reverse(arr):
 	return reverse_arr
 
 if __name__ == '__main__':
-	processIncrease('2015-08-01','2017-08-09')
+	processIncrease('2005-01-01','2017-09-13')

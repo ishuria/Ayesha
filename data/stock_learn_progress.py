@@ -24,4 +24,4 @@ def start_learn(code,batch_size,time_step,term,begin,end):
 		begindate = begindate + datetime.timedelta(days=1)
 
 if __name__ == '__main__':
-	start_learn('600000',80,30,'30','2005-01-01','2012-12-31')
+	start_learn('600000',30,30,'30','2005-01-01','2012-12-31')
