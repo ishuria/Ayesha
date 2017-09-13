@@ -12,7 +12,7 @@ import decimal
 markets = ['sh','sz']
 
 #定义常量
-rnn_unit=50
+rnn_unit=30
 input_size=6
 output_size=1
 #学习率
@@ -23,6 +23,8 @@ cursor = None
 
 LEARNING_RATE_BASE = 0.8
 LEARNING_RATE_DECAY = 0.99
+
+TRAINING_STEPS = 2000
 
 #获取训练集
 def get_train_data(code,batch_size,time_step,term,begin,end):
@@ -168,19 +170,17 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
 
         #learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, 2001 * (len(batch_index)-1), len(batch_index)-1, LEARNING_RATE_DECAY)
 
-
-        train_op=tf.train.AdamOptimizer(lr).minimize(loss)
+        global_step = tf.Variable(0,name='global_step',trainable=False)
+        train_op=tf.train.AdamOptimizer(lr).minimize(loss,global_step=global_step)
         saver=tf.train.Saver(tf.global_variables(),max_to_keep=0)
-
-        
 
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-            for i in range(2001):
+            for i in range(TRAINING_STEPS + 1):
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
                 if i % 10==0:
-                    print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=i))
+                    print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=global_step))
 
 #训练函数
 def train(batch_size,time_step,term,begin,end):
@@ -210,6 +210,7 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
+    #train_lstm(code,batch_size,time_step,term,begin,end):
     train_lstm('600000',50 , 30 , '30' , '2005-01-01' , '2016-12-31')
     #train( 30 , 30 , '30' , '2005-01-01' , '2016-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
