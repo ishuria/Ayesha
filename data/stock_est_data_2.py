@@ -12,7 +12,7 @@ cursor = None
 
 input_size=6
 
-rnn_unit=100
+rnn_unit=50
 
 
 #获取测试集
@@ -40,12 +40,10 @@ def get_test_data(code,time_step,term,date):
 			'			t.turnover_rate, ',
 			'			t.total_value, ',
 			'			t.circulation_value, ',
-			'			a.future_price_'+term+', ',
+			'			t.next_fq_close_price , ',
 			'			t.date ',
 			'		FROM ',
 			'			stock_history t ',
-			'		LEFT JOIN stock_train_data a ON a.`code` = t.`code` ',
-			'		AND a.date = t.date ',
 			'		WHERE ',
 			'			t.date <= %s ',
 			'		AND t.`code` = %s ',
@@ -53,7 +51,7 @@ def get_test_data(code,time_step,term,date):
 			'		ORDER BY ',
 			'			t.date DESC ',
 			'		LIMIT 0, ',
-			'		' + str(time_step+1) + ' ',
+			'		' + str(config.lstm_data_size) + ' ',
 			'	) tt ',
 			'ORDER BY ',
 			'	tt.date ASC '
@@ -86,21 +84,37 @@ def get_test_data(code,time_step,term,date):
 
 	stock_history_arr = np.array(stock_history_list)
 
+
+	mean=np.mean(stock_history_arr,axis=0)
+	std=np.std(stock_history_arr,axis=0)
+
+	stock_history_arr = (stock_history_arr - mean) / std
+
 	sample_size=(len(stock_history_arr)+time_step-1)/time_step  #有size个sample
 
 
 	#数据不一定需要有future_price
-	x = None
-	for i in range(len(stock_history_arr) - time_step):
-		x = stock_history_arr[i:i+time_step,:6]
-		mean = np.mean(x,axis=0)
-		std = np.std(x,axis=0)
-		x = (x - mean) / std
+	
+	for i in range(sample_size-1):
+		x = stock_history_arr[i*time_step:(i+1)*time_step,:6]
+		#mean=np.mean(stock_history_arr[:,:6],axis=0)
+		#std=np.std(stock_history_arr[:,:6],axis=0)
+		#x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
+		test_x.append(x.tolist())
 
+	x = stock_history_arr[-1 * time_step:,:6]
+	#mean=np.mean(stock_history_arr[:,:6],axis=0)
+	#std=np.std(stock_history_arr[:,:6],axis=0)
+	#x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
+	
+
+	#标准差和方差均取与预测数据时间上最接近的一组即可
 	test_x.append(x.tolist())
 
 	#未来的真实值，可能为空
 	future_price = stock_price_list[-1][0]
+
+
 	return mean,std,test_x,future_price
 
 
@@ -200,16 +214,15 @@ def predict_lstm(code,time_step,term,begin,end):
 				module_file = tf.train.latest_checkpoint(model_path)
 				saver.restore(sess, module_file)
 
-
-				
-
 				test_predict=[]
 				for step in range(len(test_x)):
 					prob = sess.run(pred,feed_dict={X:[test_x[step]]})
 					predict = prob.reshape((-1))
 					test_predict.extend(predict)
+
 				#预测值
 				test_predict = np.array(test_predict) * float(std[2]) + float(mean[2])
+				print(test_predict)
 				est_price = test_predict[-1]
 
 				print('insert or update estimate data, code = '+code+', date = '+date +', term = ' + term)
@@ -263,11 +276,16 @@ def db_close():
 	cursor.close()
 	conn.close()
 
+def reverse(arr):
+	reverse_arr = []
+	for i in range(len(arr)-1,-1,-1):
+		reverse_arr.append(arr[i])
+	return reverse_arr
 
 if __name__ == '__main__':
 	db_connect()
 	#predict_lstm(code,time_step,term,begin,end):
-	predict_lstm('600000',300,'30','2012-12-01','2013-03-31')
+	predict_lstm('600000',50,'30','2013-01-01','2013-03-01')
 	'''
 	predict_lstm('600009',30,'30','2017-01-01','2017-03-01')
 	predict_lstm('600010',30,'30','2017-01-01','2017-03-01')
