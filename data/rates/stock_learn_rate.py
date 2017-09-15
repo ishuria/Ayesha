@@ -11,7 +11,7 @@ import decimal
 markets = ['sh','sz']
 
 #定义常量
-rnn_unit=30
+rnn_unit=10
 input_size=5
 output_size=1
 #学习率
@@ -31,14 +31,14 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
     stock_price_list = []
     cursor.execute(''.join([
             'SELECT ',
-            '    t.trade_num_rate, ',
-            '    t.trade_money_rate, ',
-            '    t.total_value_rate, ',
-            '    t.circulation_value_rate, ',
-            '    t.fq_close_price_rate, ',
-            '    t.next_fq_close_price_rate ',
+            '    t.trade_num_rate * 100, ',
+            '    t.trade_money_rate* 100, ',
+            '    t.total_value_rate* 100, ',
+            '    t.circulation_value_rate* 100, ',
+            '    t.fq_close_price_rate* 100, ',
+            '    case when t.next_fq_close_price_rate > 0.03 then 1 else 0 end ',
             'FROM ',
-            '    stock_rate t ',
+            '    stock_rate t inner join stock_history h on h.`code` = t.`code` and h.date = t.date ',
             'WHERE ',
             '    t.`code` = %s',
             '    AND t.date <= %s ',
@@ -138,7 +138,8 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
         input_rnn=tf.matmul(input,w_in)+b_in
         input_rnn=tf.reshape(input_rnn,[-1,time_step_variable,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
-        cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
+        basic_cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit,state_is_tuple=True)
+        cell = tf.nn.rnn_cell.MultiRNNCell([basic_cell]*2,  state_is_tuple=True)
         init_state=cell.zero_state(batch_size_variable,dtype=tf.float32)
         output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
         output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
@@ -147,7 +148,8 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         pred=tf.matmul(output,w_out)+b_out
 
         #损失函数
-        loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
+        #loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
+        loss=abs(pred[-1]-Y[-1])
 
         #learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, 2001 * (len(batch_index)-1), len(batch_index)-1, LEARNING_RATE_DECAY)
 
@@ -160,8 +162,9 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
             for i in range(TRAINING_STEPS + 1):
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
-                if i % 10==0:
+                if i % 200==0:
                     print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=global_step))
+                print('status : ' + str(i) + ' / ' + str(TRAINING_STEPS + 1) + ' ...')
 
 #训练函数
 def train(batch_size,time_step,term,begin,end):

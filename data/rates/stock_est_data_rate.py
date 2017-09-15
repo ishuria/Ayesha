@@ -11,7 +11,7 @@ cursor = None
 
 input_size=5
 
-rnn_unit=30
+rnn_unit=10
 
 
 #获取测试集
@@ -29,11 +29,11 @@ def get_test_data(code,time_step,term,date):
 	stock_price_list = []
 	cursor.execute(''.join([
             'SELECT ',
-            '    t.trade_num_rate, ',
-            '    t.trade_money_rate, ',
-            '    t.total_value_rate, ',
-            '    t.circulation_value_rate, ',
-            '    t.fq_close_price_rate, ',
+            '    t.trade_num_rate * 100, ',
+            '    t.trade_money_rate * 100, ',
+            '    t.total_value_rate * 100, ',
+            '    t.circulation_value_rate * 100, ',
+            '    t.fq_close_price_rate * 100, ',
             '    t.next_fq_close_price_rate ',
             'FROM ',
             '    stock_rate t ',
@@ -92,42 +92,6 @@ def get_test_data(code,time_step,term,date):
 
 
 
-	#标准化
-	#mean=np.mean(stock_history_list,axis=0)
-	#std=np.std(stock_history_list,axis=0)
-	#normalized_test_data=(stock_history_list-mean)/std
-
-	'''
-	sample_size=(len(stock_history_arr)+time_step-1)/time_step  #有size个sample
-
-
-	#数据不一定需要有future_price
-
-	mean = None
-	std = None
-	for i in range(sample_size-1):
-		x = stock_history_arr[i*time_step:(i+1)*time_step,:6]
-		x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
-		test_x.append(x.tolist())
-
-	x = stock_history_arr[(i+1)*time_step:,:6]
-	mean=np.mean(stock_history_arr[(i+1)*time_step:,:6],axis=0)
-	std=np.std(stock_history_arr[(i+1)*time_step:,:6],axis=0)
-	x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
-
-	#标准差和方差均取与预测数据时间上最接近的一组即可
-	
-	test_x.append(x.tolist())
-
-	#未来的真实值，可能为空
-	future_price = stock_price_list[-1][0]
-
-
-
-
-	return mean,std,test_x,future_price
-	'''
-
 def getCodeList(market):
 	global conn
 	global cursor
@@ -159,9 +123,10 @@ def predict_lstm(code,time_step,term,begin,end):
 		input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
 		input_rnn=tf.matmul(input,w_in)+b_in
 		input_rnn=tf.reshape(input_rnn,[-1,time_step_tensor,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
-		cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
-		init_state=cell.zero_state(batch_size,dtype=tf.float32)
-		output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)  #output_rnn是记录lstm每个输出节点的结果，final_states是最后一个cell的结果
+		basic_cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit,state_is_tuple=True)
+		cell = tf.nn.rnn_cell.MultiRNNCell([basic_cell]*2,state_is_tuple=True)
+		#init_state=cell.zero_state(batch_size,dtype=tf.float32)
+		output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn, dtype=tf.float32)  #output_rnn是记录lstm每个输出节点的结果，final_states是最后一个cell的结果
 		output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
 		w_out=weights['out']
 		b_out=biases['out']
@@ -256,7 +221,7 @@ def reverse(arr):
 if __name__ == '__main__':
 	db_connect()
 	#predict_lstm(code,time_step,term,begin,end):
-	predict_lstm('600000',30,'30','2013-01-01','2017-12-01')
+	predict_lstm('600000',30,'30','2013-01-01','2013-05-01')
 	'''
 	predict_lstm('600009',30,'30','2017-01-01','2017-03-01')
 	predict_lstm('600010',30,'30','2017-01-01','2017-03-01')

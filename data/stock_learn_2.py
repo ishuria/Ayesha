@@ -12,7 +12,7 @@ import decimal
 markets = ['sh','sz']
 
 #定义常量
-rnn_unit=50
+rnn_unit=30
 input_size=6
 output_size=1
 #学习率
@@ -31,10 +31,6 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
     stock_history_list = []
     stock_price_list = []
     cursor.execute(''.join([
-            'SELECT ',
-            '    * ',
-            'FROM ',
-            '    ( ',
             '        SELECT ',
             '            t.trade_num, ',
             '            t.trade_money, ',
@@ -42,8 +38,7 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
             '            t.turnover_rate, ',
             '            t.total_value, ',
             '            t.circulation_value, ',
-            '            t.next_fq_close_price , ',
-            '            t.date ',
+            '            (t.next_fq_close_price - t.fq_close_price) / t.fq_close_price  ',
             '        FROM ',
             '            stock_history t ',
             '        WHERE ',
@@ -51,12 +46,7 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
             '        AND t.date >= %s ',
             '        AND t.`code` = %s ',
             '        ORDER BY ',
-            '            t.date DESC ',
-            '        LIMIT 0, ',
-            '        '+ str(config.lstm_data_size) + ' ',
-            '    ) tt ',
-            'ORDER BY ',
-            '    tt.date ASC '
+            '            t.date ASC '
         ]) , [end,begin,code])
     results = cursor.fetchall()
     for result in results:
@@ -100,8 +90,8 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
     stock_price_arr = np.array(stock_price_list)
 
     #全局标准化
-    stock_history_arr = (stock_history_arr - np.mean(stock_history_arr,axis=0)) / np.std(stock_history_arr,axis=0)
-    stock_price_arr = (stock_price_arr - np.mean(stock_price_arr,axis=0)) / np.std(stock_price_arr,axis=0)
+    #stock_history_arr = (stock_history_arr - np.mean(stock_history_arr,axis=0)) / np.std(stock_history_arr,axis=0)
+    #stock_price_arr = (stock_price_arr - np.mean(stock_price_arr,axis=0)) / np.std(stock_price_arr,axis=0)
     
 
 
@@ -117,7 +107,7 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
        x = stock_history_arr[i:i+time_step,:6]
        #x = stock_history_list[i:i+time_step]
        #标准化，在每一个time_step组内进行标准化
-       #x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
+       x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
        #print(x)
        y = stock_price_arr[i:i+time_step,0,np.newaxis]
        #y = stock_price_list[i:i+time_step,np.newaxis]
@@ -160,7 +150,7 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         input=tf.reshape(X,[-1,input_size])  #需要将tensor转成2维进行计算，计算后的结果作为隐藏层的输入
         input_rnn=tf.matmul(input,w_in)+b_in
         input_rnn=tf.reshape(input_rnn,[-1,time_step_variable,rnn_unit])  #将tensor转成3维，作为lstm cell的输入
-        cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit)
+        cell=tf.nn.rnn_cell.BasicLSTMCell(rnn_unit,state_is_tuple=True)
         init_state=cell.zero_state(batch_size_variable,dtype=tf.float32)
         output_rnn,final_states=tf.nn.dynamic_rnn(cell, input_rnn,initial_state=init_state, dtype=tf.float32)
         output=tf.reshape(output_rnn,[-1,rnn_unit]) #作为输出层的输入
@@ -169,7 +159,8 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         pred=tf.matmul(output,w_out)+b_out
 
         #损失函数
-        loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
+        loss=abs(pred[-1]-Y[-1])
+        #loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
 
         #learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, 2001 * (len(batch_index)-1), len(batch_index)-1, LEARNING_RATE_DECAY)
 
@@ -214,7 +205,7 @@ def db_close():
 if __name__ == '__main__':
     db_connect()
     #train_lstm(code,batch_size,time_step,term,begin,end):
-    train_lstm('600000',80 , 50 , '30' , '2005-01-01' , '2012-12-31')
+    train_lstm('600000',80 , 30 , '30' , '2005-01-01' , '2012-12-31')
     #train( 30 , 30 , '30' , '2005-01-01' , '2016-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )
