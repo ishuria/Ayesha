@@ -4,7 +4,10 @@ http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?type=DZJYXQ&token
 
 
 
-http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?type=DZJYXQ&token=70f12f2f4f091e459a279469fe49eca5&cmd=&st={sortType}&sr={sortRule}&p=162&ps={pageSize}&js=var%20name={pages:(tp),data:(x)}{param}
+http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?type=DZJYXQ&token=70f12f2f4f091e459a279469fe49eca5&cmd=&st={sortType}&sr={sortRule}&p=162&ps={pageSize}&js=var%20dzjy={pages:(tp),data:(x)}
+
+
+http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?type=DZJYXQ&token=70f12f2f4f091e459a279469fe49eca5&cmd=&st={sortType}&sr={sortRule}&p=162&ps={pageSize}&js={pages:(tp),data:(x)}
 
 
 
