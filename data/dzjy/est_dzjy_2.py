@@ -34,8 +34,8 @@ def get_test_data(code,time_step,term,date):
             '            ( ',
             '                SELECT ',
             '                    t.trade_num, ',
-            '                    t.trade_money, ',
             '                    t.fq_close_price, ',
+            '                    t.trade_money / t.circulation_value * 100 trade_rate, ',
             '                    t.turnover_rate, ',
             '                    ifnull( ',
             '                        sum(t2.tvol * t2.PRICE * 10000) / t.circulation_value * 100, ',
@@ -45,15 +45,23 @@ def get_test_data(code,time_step,term,date):
             '                    t.date ',
             '                FROM ',
             '                    stock_history t ',
-            '                LEFT JOIN dzjy_history t2 ON t.date = SUBSTR(t2.tdate, 1, 10) ',
+            '                LEFT JOIN dzjy_history t2 ON t.date = t2.tdate ',
             '                AND t.`code` = t2.secucode ',
             '                LEFT JOIN stock_train_data d ON d.`code` = t.`code` ',
             '                AND d.date = t.date ',
             '                WHERE ',
-            '                    t.date <= %s ',
-            '                AND t.`code` = %s ',
+            '                    t.date <= %s  ',
+            '                AND t.`code` = %s  ',
+            '                AND t.date IS NOT NULL ',
+            '                AND t.trade_num IS NOT NULL ',
+            '                AND t.trade_money IS NOT NULL ',
+            '                AND t.fq_close_price IS NOT NULL ',
+            '                AND t.turnover_rate IS NOT NULL ',
+            '                AND d.future_price_30 IS NOT NULL ',
+            '                AND t.close_price IS NOT NULL ',
             '                GROUP BY ',
             '                    t.date, ',
+            '                    t.close_price, ',
             '                    t.trade_num, ',
             '                    t.trade_money, ',
             '                    t.fq_close_price, ',
@@ -63,7 +71,9 @@ def get_test_data(code,time_step,term,date):
             '                    t.date DESC ',
             '                LIMIT 0, ',
             '                30 ',
-            '            ) tt ORDER BY date asc',
+            '            ) tt ',
+            '        ORDER BY ',
+            '            date ASC',
         ]) , [date,code])
     results = cursor.fetchall()
     for result in results:
@@ -92,7 +102,6 @@ def get_test_data(code,time_step,term,date):
 
         stock_history_list.append(stock_history)
 
-
         #future_price
         stock_price.append((result[5]))
         stock_price_list.append(stock_price)
@@ -105,16 +114,20 @@ def get_test_data(code,time_step,term,date):
 
     
 
-    sample_size=(len(stock_history_arr)+time_step-1)/time_step  #有size个sample
 
-    mean = np.mean(stock_history_arr,axis=0)
-    std = np.std(stock_history_arr,axis=0)
+    trade_num_arr = stock_history_arr[:,0]
+    fq_close_price_arr = stock_history_arr[:,1]
+    trade_num_arr = (trade_num_arr - np.mean(trade_num_arr,axis=0)) / np.std(trade_num_arr,axis=0)
 
-    stock_history_arr = (stock_history_arr - np.mean(stock_history_arr,axis=0)) / np.std(stock_history_arr,axis=0)
+    mean = np.mean(fq_close_price_arr,axis=0)
+    std = np.std(fq_close_price_arr,axis=0)
+    fq_close_price_arr = (fq_close_price_arr - np.mean(fq_close_price_arr,axis=0)) / np.std(fq_close_price_arr,axis=0)
 
+    stock_history_arr[:,0] = trade_num_arr
+    stock_history_arr[:,1] = fq_close_price_arr
 
     #标准差和方差均取与预测数据时间上最接近的一组即可
-    test_x.append(stock_history_arr.tolist())
+    test_x.append(stock_history_arr[-1*time_step:].tolist())
 
     #未来的真实值，可能为空
     future_price = stock_price_list[-1][0]
@@ -122,43 +135,6 @@ def get_test_data(code,time_step,term,date):
 
     return mean,std,test_x,future_price
 
-
-
-    #标准化
-    #mean=np.mean(stock_history_list,axis=0)
-    #std=np.std(stock_history_list,axis=0)
-    #normalized_test_data=(stock_history_list-mean)/std
-
-    '''
-    sample_size=(len(stock_history_arr)+time_step-1)/time_step  #有size个sample
-
-
-    #数据不一定需要有future_price
-
-    mean = None
-    std = None
-    for i in range(sample_size-1):
-        x = stock_history_arr[i*time_step:(i+1)*time_step,:6]
-        x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
-        test_x.append(x.tolist())
-
-    x = stock_history_arr[(i+1)*time_step:,:6]
-    mean=np.mean(stock_history_arr[(i+1)*time_step:,:6],axis=0)
-    std=np.std(stock_history_arr[(i+1)*time_step:,:6],axis=0)
-    x = (x - np.mean(x,axis=0)) / np.std(x,axis=0)
-
-    #标准差和方差均取与预测数据时间上最接近的一组即可
-    
-    test_x.append(x.tolist())
-
-    #未来的真实值，可能为空
-    future_price = stock_price_list[-1][0]
-
-
-
-
-    return mean,std,test_x,future_price
-    '''
 
 def getCodeList(market):
     global conn
@@ -226,7 +202,7 @@ def predict_lstm(code,time_step,term,begin,end):
                     test_predict.extend(predict)
 
                 #预测值
-                test_predict = np.array(test_predict) * float(std[2]) + float(mean[2])
+                test_predict = np.array(test_predict) * float(std) + float(mean)
                 #print(test_predict)
                 est_price = test_predict[-1]
 

@@ -26,6 +26,7 @@ def updateDZJY(page):
 	data = json_content['data']
 	for i in range(len(data)):
 		TDATE = data[i]["TDATE"]
+		TDATE = TDATE[0:10]
 		SECUCODE = data[i]["SECUCODE"]
 		SNAME = data[i]["SNAME"]
 		PRICE = data[i]["PRICE"]
