@@ -133,7 +133,7 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
 
         x[:,0] = trade_num_arr
         x[:,1] = fq_close_price_arr
-        y = (y - mean) / std
+        y = (y - np.mean(y,axis=0)) / np.std(y,axis=0)
 
 
         train_x.append(x.tolist())
@@ -179,11 +179,9 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         pred=tf.matmul(output,w_out)+b_out
 
         #损失函数
-        loss=abs(pred[-1][-1]-Y[-1][-1])
+        #loss=abs(pred[-1][-1]-Y[-1][-1])
 
-
-
-        #loss=tf.reduce_mean(tf.square(tf.reshape(pred,[-1])-tf.reshape(Y, [-1])))
+        loss=tf.reduce_mean(tf.square(tf.reshape(pred[:,-1],[-1])-tf.reshape(Y[:,-1], [-1])))
 
         #learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, 2001 * (len(batch_index)-1), len(batch_index)-1, LEARNING_RATE_DECAY)
 

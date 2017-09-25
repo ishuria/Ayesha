@@ -23,7 +23,7 @@ def get_draw_data(code,begin,end):
 	est_data = []
 	real_data = []
 	curr_data = []
-	dates = []
+	indexs = []
 	cursor.execute(''.join([
             '        SELECT ',
 			'			t.`code`, ',
@@ -41,14 +41,15 @@ def get_draw_data(code,begin,end):
 			'			t.date ASC '
 		]) , [code,begin,end])
 	results = cursor.fetchall()
-	for result in results:
-		dates.append(result[1])
+	for i in range(len(results)):
+		result = results[i]
+		indexs.append(i)
 		est_data.append(result[2])
 		real_data.append(result[3])
 		curr_data.append(result[4])
 	conn.commit()
 
-	return dates,est_data,real_data,curr_data
+	return indexs,est_data,real_data,curr_data
 
 
 
@@ -56,12 +57,12 @@ if __name__ == '__main__':
 	db_connect()
 
 
-	dates,est_data,real_data,curr_data = get_draw_data('600000','2013-01-01','2013-12-01')
+	indexs,est_data,real_data,curr_data = get_draw_data('600000','2013-01-01','2013-12-01')
 
 
 	plt.figure()
-	plt.plot(dates, est_data, color='b')
-	plt.plot(dates, real_data,  color='r')
-	plt.plot(dates, curr_data,  color='g')
+	plt.plot(indexs, est_data, color='b')
+	plt.plot(indexs, real_data,  color='r')
+	plt.plot(indexs, curr_data,  color='g')
 	plt.show()
 	db_close()
