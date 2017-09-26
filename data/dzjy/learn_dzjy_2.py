@@ -12,7 +12,7 @@ markets = ['sh','sz']
 
 #定义常量
 rnn_unit=30
-input_size=5
+input_size=7
 output_size=1
 #学习率
 lr=0.0006
@@ -30,6 +30,8 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
             '        SELECT ',
             '            t.trade_num, ',
             '            t.fq_close_price, ',
+            '            t.trade_money,  ',
+            '            t.circulation_value,  ',
             '            t.trade_money / t.circulation_value * 100 trade_rate, ',
             '            t.turnover_rate, ',
             '            ifnull( ',
@@ -93,10 +95,19 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
             continue
         stock_history.append(result[4])
 
-
         if result[5] is None:
             continue
-        stock_price.append(result[5])
+        stock_history.append(result[5])
+
+        if result[6] is None:
+            continue
+        stock_history.append(result[6])
+
+
+
+        if result[7] is None:
+            continue
+        stock_price.append(result[7])
         
         stock_history_list.append(stock_history)
         stock_price_list.append(stock_price)
@@ -107,6 +118,28 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
     stock_price_arr = np.array(stock_price_list)
 
     #全局标准化
+
+    trade_num_arr = stock_history_arr[:,0]
+    trade_num_arr = (trade_num_arr - np.mean(trade_num_arr,axis=0)) / np.std(trade_num_arr,axis=0)
+
+
+    fq_close_price_arr = stock_history_arr[:,1]
+    mean = np.mean(fq_close_price_arr,axis=0)
+    std = np.std(fq_close_price_arr,axis=0)
+    fq_close_price_arr = (fq_close_price_arr - mean) / std
+
+    trade_money = stock_history_arr[:,2]
+    trade_money = (trade_money - np.mean(trade_money,axis=0)) / np.std(trade_money,axis=0)
+
+    circulation_value = stock_history_arr[:,3]
+    circulation_value = (circulation_value - np.mean(circulation_value,axis=0)) / np.std(circulation_value,axis=0)
+
+    stock_history_arr[:,0] = trade_num_arr
+    stock_history_arr[:,1] = fq_close_price_arr
+    stock_history_arr[:,2] = trade_money
+    stock_history_arr[:,3] = circulation_value
+    stock_price_arr = (stock_price_arr - np.mean(stock_price_arr,axis=0)) / np.std(stock_price_arr,axis=0)
+
 
 
     
@@ -123,17 +156,6 @@ def get_train_data(code,batch_size,time_step,term,begin,end):
         y = stock_price_arr[i:i+time_step,0,np.newaxis]
 
 
-        trade_num_arr = x[:,0]
-        fq_close_price_arr = x[:,1]
-        trade_num_arr = (trade_num_arr - np.mean(trade_num_arr,axis=0)) / np.std(trade_num_arr,axis=0)
-
-        mean = np.mean(fq_close_price_arr,axis=0)
-        std = np.std(fq_close_price_arr,axis=0)
-        fq_close_price_arr = (fq_close_price_arr - mean) / std
-
-        x[:,0] = trade_num_arr
-        x[:,1] = fq_close_price_arr
-        y = (y - np.mean(y,axis=0)) / np.std(y,axis=0)
 
 
         train_x.append(x.tolist())
@@ -181,7 +203,8 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
         #损失函数
         #loss=abs(pred[-1][-1]-Y[-1][-1])
 
-        loss=tf.reduce_mean(tf.square(tf.reshape(pred[:,-1],[-1])-tf.reshape(Y[:,-1], [-1])))
+
+        loss=tf.reduce_mean(tf.square(tf.reshape(pred[time_step-1::time_step],[-1])-tf.reshape(Y[:,-1], [-1])))
 
         #learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, 2001 * (len(batch_index)-1), len(batch_index)-1, LEARNING_RATE_DECAY)
 
@@ -195,6 +218,7 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
                     #print(train_y[batch_index[step]:batch_index[step+1]][-1][-1])
+                    #print pred.eval()
                 if i % 10==0:
                     print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=global_step))
 

@@ -9,7 +9,7 @@ import decimal
 conn = None
 cursor = None
 
-input_size=5
+input_size=7
 
 rnn_unit=30
 
@@ -35,6 +35,8 @@ def get_test_data(code,time_step,term,date):
             '                SELECT ',
             '                    t.trade_num, ',
             '                    t.fq_close_price, ',
+            '                    t.trade_money,  ',
+            '                    t.circulation_value,  ',
             '                    t.trade_money / t.circulation_value * 100 trade_rate, ',
             '                    t.turnover_rate, ',
             '                    ifnull( ',
@@ -70,7 +72,7 @@ def get_test_data(code,time_step,term,date):
             '                ORDER BY ',
             '                    t.date DESC ',
             '                LIMIT 0, ',
-            '                30 ',
+            '                1500 ',
             '            ) tt ',
             '        ORDER BY ',
             '            date ASC',
@@ -100,10 +102,18 @@ def get_test_data(code,time_step,term,date):
             continue
         stock_history.append((result[4]))
 
+        if result[5] is None:
+            continue
+        stock_history.append((result[5]))
+
+        if result[6] is None:
+            continue
+        stock_history.append((result[6]))
+
         stock_history_list.append(stock_history)
 
         #future_price
-        stock_price.append((result[5]))
+        stock_price.append((result[7]))
         stock_price_list.append(stock_price)
     conn.commit()
 
@@ -116,15 +126,25 @@ def get_test_data(code,time_step,term,date):
 
 
     trade_num_arr = stock_history_arr[:,0]
-    fq_close_price_arr = stock_history_arr[:,1]
     trade_num_arr = (trade_num_arr - np.mean(trade_num_arr,axis=0)) / np.std(trade_num_arr,axis=0)
 
+
+    fq_close_price_arr = stock_history_arr[:,1]
     mean = np.mean(fq_close_price_arr,axis=0)
     std = np.std(fq_close_price_arr,axis=0)
     fq_close_price_arr = (fq_close_price_arr - np.mean(fq_close_price_arr,axis=0)) / np.std(fq_close_price_arr,axis=0)
 
+    trade_money = stock_history_arr[:,2]
+    trade_money = (trade_money - np.mean(trade_money,axis=0)) / np.std(trade_money,axis=0)
+
+    circulation_value = stock_history_arr[:,3]
+    circulation_value = (circulation_value - np.mean(circulation_value,axis=0)) / np.std(circulation_value,axis=0)
+
+
     stock_history_arr[:,0] = trade_num_arr
     stock_history_arr[:,1] = fq_close_price_arr
+    stock_history_arr[:,2] = trade_money
+    stock_history_arr[:,3] = circulation_value
 
     #标准差和方差均取与预测数据时间上最接近的一组即可
     test_x.append(stock_history_arr[-1*time_step:].tolist())
