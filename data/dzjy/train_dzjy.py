@@ -203,7 +203,7 @@ def daily_train_lstm(code,batch_size,time_step,term,date):
 
         global_step = tf.Variable(0,name='global_step',trainable=False)
         train_op=tf.train.AdamOptimizer(lr).minimize(loss,global_step=global_step)
-        saver=tf.train.Saver(tf.global_variables(),max_to_keep=0)
+        saver=tf.train.Saver()
 
         with tf.Session() as sess:
         	#参数恢复
@@ -262,5 +262,5 @@ def db_close():
 if __name__ == '__main__':
     db_connect()
     #daily_train(80,30,'30','2013-01-01')
-    daily_train_lstm('600000',80,30,'30','2013-01-01')
+    daily_train_lstm('600000',80,30,'30','2017-01-01')
     db_close()

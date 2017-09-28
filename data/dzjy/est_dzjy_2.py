@@ -286,7 +286,7 @@ def reverse(arr):
 if __name__ == '__main__':
     db_connect()
     #predict_lstm(code,time_step,term,begin,end):
-    predict_lstm('600000',30,'30','2013-01-01','2013-12-01')
+    predict_lstm('600000',30,'30','2017-01-01','2017-12-01')
     '''
     predict_lstm('600009',30,'30','2017-01-01','2017-03-01')
     predict_lstm('600010',30,'30','2017-01-01','2017-03-01')

@@ -57,7 +57,7 @@ if __name__ == '__main__':
 	db_connect()
 
 
-	indexs,est_data,real_data,curr_data = get_draw_data('600000','2013-01-01','2013-12-01')
+	indexs,est_data,real_data,curr_data = get_draw_data('600000','2017-01-01','2017-12-01')
 
 
 	plt.figure()
