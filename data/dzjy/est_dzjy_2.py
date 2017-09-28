@@ -72,7 +72,7 @@ def get_test_data(code,time_step,term,date):
             '                ORDER BY ',
             '                    t.date DESC ',
             '                LIMIT 0, ',
-            '                1500 ',
+            '                '+ str(config.MAX_DATA_SIZE) +' ',
             '            ) tt ',
             '        ORDER BY ',
             '            date ASC',

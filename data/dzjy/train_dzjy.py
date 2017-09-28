@@ -20,9 +20,6 @@ lr=0.0006
 conn = None
 cursor = None
 
-TRAINING_STEPS = 200
-
-
 
 #获取训练集
 def get_train_data(code,batch_size,time_step,term,date):
@@ -73,7 +70,7 @@ def get_train_data(code,batch_size,time_step,term,date):
             '                ORDER BY ',
             '                    t.date DESC ',
             '                LIMIT 0, ',
-            '                1500 ',
+            '                '+ str(config.MAX_DATA_SIZE) +' ',
             '            ) tt ',
             '        ORDER BY ',
             '            date ASC',
@@ -203,7 +200,7 @@ def daily_train_lstm(code,batch_size,time_step,term,date):
 
         global_step = tf.Variable(0,name='global_step',trainable=False)
         train_op=tf.train.AdamOptimizer(lr).minimize(loss,global_step=global_step)
-        saver=tf.train.Saver()
+        saver=tf.train.Saver(max_to_keep=10)
 
         with tf.Session() as sess:
         	#参数恢复
@@ -212,7 +209,7 @@ def daily_train_lstm(code,batch_size,time_step,term,date):
             module_file = tf.train.latest_checkpoint(model_path)
             saver.restore(sess, module_file)
             #训练
-            for i in range(TRAINING_STEPS + 1):
+            for i in range(config.TRAINING_STEPS + 1):
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
             #保存模型

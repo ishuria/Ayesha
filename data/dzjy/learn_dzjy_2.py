@@ -20,55 +20,61 @@ lr=0.0006
 conn = None
 cursor = None
 
-TRAINING_STEPS = 2000
 
 #获取训练集
 def get_train_data(code,batch_size,time_step,term,begin,end):
     stock_history_list = []
     stock_price_list = []
     cursor.execute(''.join([
-            '        SELECT ',
-            '            t.trade_num, ',
-            '            t.fq_close_price, ',
-            '            t.trade_money,  ',
-            '            t.circulation_value,  ',
-            '            t.trade_money / t.circulation_value * 100 trade_rate, ',
-            '            t.turnover_rate, ',
-            '            ifnull( ',
-            '                sum(t2.tvol * t2.PRICE * 10000) / t.circulation_value * 100, ',
-            '                0 ',
-            '            ) dzjy_rate, ',
-            '            d.future_price_30, ',
-            '            t.date ',
+            '       SELECT ',
+            '            * ',
             '        FROM ',
-            '            stock_history t ',
-            '        LEFT JOIN dzjy_history t2 ON t.date = t2.tdate ',
-            '        AND t.`code` = t2.secucode ',
-            '        INNER JOIN stock_train_data d ON d.`code` = t.`code` ',
-            '        AND d.date = t.date ',
-            '        WHERE ',
-            '            t.date <= %s  ',
-            '        AND t.date >= %s  ',
-            '        AND t.`code` = %s  ',
-            '        AND t.date IS NOT NULL ',
-            '        AND t.trade_num IS NOT NULL ',
-            '        AND t.trade_money IS NOT NULL ',
-            '        AND t.fq_close_price IS NOT NULL ',
-            '        AND t.turnover_rate IS NOT NULL ',
-            '        AND d.future_price_30 IS NOT NULL ',
-            '        AND t.close_price IS NOT NULL ',
-            '        AND t.circulation_value IS NOT NULL ',
-            '        GROUP BY ',
-            '            t.date, ',
-            '            t.close_price, ',
-            '            t.trade_num, ',
-            '            t.trade_money, ',
-            '            t.fq_close_price, ',
-            '            t.circulation_value, ',
-            '            t.turnover_rate, ',
-            '            d.future_price_30 ',
+            '            ( ',
+            '                SELECT ',
+            '                    t.trade_num, ',
+            '                    t.fq_close_price, ',
+            '                    t.trade_money,  ',
+            '                    t.circulation_value,  ',
+            '                    t.trade_money / t.circulation_value * 100 trade_rate, ',
+            '                    t.turnover_rate, ',
+            '                    ifnull( ',
+            '                        sum(t2.tvol * t2.PRICE * 10000) / t.circulation_value * 100, ',
+            '                        0 ',
+            '                    ) dzjy_rate, ',
+            '                    d.future_price_30, ',
+            '                    t.date ',
+            '                FROM ',
+            '                    stock_history t ',
+            '                LEFT JOIN dzjy_history t2 ON t.date = t2.tdate ',
+            '                AND t.`code` = t2.secucode ',
+            '                LEFT JOIN stock_train_data d ON d.`code` = t.`code` ',
+            '                AND d.date = t.date ',
+            '                WHERE ',
+            '                    t.date <= %s  ',
+            '                AND t.date >= %s  ',
+            '                AND t.`code` = %s  ',
+            '                AND t.date IS NOT NULL ',
+            '                AND t.trade_num IS NOT NULL ',
+            '                AND t.trade_money IS NOT NULL ',
+            '                AND t.fq_close_price IS NOT NULL ',
+            '                AND t.turnover_rate IS NOT NULL ',
+            '                AND d.future_price_30 IS NOT NULL ',
+            '                AND t.close_price IS NOT NULL ',
+            '                GROUP BY ',
+            '                    t.date, ',
+            '                    t.close_price, ',
+            '                    t.trade_num, ',
+            '                    t.trade_money, ',
+            '                    t.fq_close_price, ',
+            '                    t.turnover_rate, ',
+            '                    d.future_price_30 ',
+            '                ORDER BY ',
+            '                    t.date DESC ',
+            '                LIMIT 0, ',
+            '                '+ str(config.MAX_DATA_SIZE) +' ',
+            '            ) tt ',
             '        ORDER BY ',
-            '            t.date ASC '
+            '            date ASC',
         ]) , [end,begin,code])
     results = cursor.fetchall()
     for result in results:
@@ -213,17 +219,19 @@ def train_lstm(code,batch_size,time_step,term,begin,end):
 
         global_step = tf.Variable(0,name='global_step',trainable=False)
         train_op=tf.train.AdamOptimizer(lr).minimize(loss,global_step=global_step)
-        saver=tf.train.Saver(tf.global_variables(),max_to_keep=0)
+        saver=tf.train.Saver(max_to_keep=10)
 
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-            for i in range(TRAINING_STEPS + 1):
+            for i in range(config.TRAINING_STEPS + 1):
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
                     #print(train_y[batch_index[step]:batch_index[step+1]][-1][-1])
                     #print pred.eval()
-                if i % 10==0:
+                if i % 50==0:
                     print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=global_step))
+
+            print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=global_step))
 
 #训练函数
 def train(batch_size,time_step,term,begin,end):
