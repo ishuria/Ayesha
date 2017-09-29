@@ -6,6 +6,7 @@ import MySQLdb as mdb
 import os
 import datetime
 import decimal
+import sys
 
 #市场
 markets = ['sh','sz']
@@ -277,9 +278,16 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
+
+    code = sys.argv[1]
+    batch_size = int(sys.argv[2])
+    time_step = int(sys.argv[3])
+    term = sys.argv[4]
+
+
     #train_lstm(code,batch_size,time_step,term,begin,end):
-    #train_lstm('600000',80 , 30 , '30' , '2005-01-01' , '2012-12-31')
-    train( 80 , 30 , '30' , '2005-01-01' , '2016-12-31' )
+    train_lstm(code,batch_size , time_step , term , '2005-01-01' , '2016-12-31')
+    #train( 80 , 30 , '30' , '2005-01-01' , '2016-12-31' )
     #train( 90 , 90 , '90' , '2005-01-01' , '2005-01-01' )
     #train( 180 , 180 , '180' , '2005-01-01' , '2005-01-01' )
     #train( 360 , 360 , '360' , '2005-01-01' , '2005-01-01' )
