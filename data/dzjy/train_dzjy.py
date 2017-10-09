@@ -4,6 +4,7 @@ import tensorflow as tf
 import config
 import MySQLdb as mdb
 import os
+import sys
 
 #市场
 markets = ['sh','sz']
@@ -209,7 +210,7 @@ def daily_train_lstm(code,batch_size,time_step,term,date):
             module_file = tf.train.latest_checkpoint(model_path)
             saver.restore(sess, module_file)
             #训练
-            for i in range(config.TRAINING_STEPS + 1):
+            for i in range(config.DAILY_TRAINING_STEPS + 1):
                 for step in range(len(batch_index)-1):
                     final_states,loss_=sess.run([train_op,loss],feed_dict={X:train_x[batch_index[step]:batch_index[step+1]],Y:train_y[batch_index[step]:batch_index[step+1]]})
             #保存模型
@@ -258,6 +259,12 @@ def db_close():
 
 if __name__ == '__main__':
     db_connect()
+    code = sys.argv[1]
+    batch_size = int(sys.argv[2])
+    time_step = int(sys.argv[3])
+    term = sys.argv[4]
+    date = sys.argv[5]
     #daily_train(80,30,'30','2013-01-01')
-    daily_train_lstm('600000',80,30,'30','2017-01-01')
+    #daily_train_lstm('600000',80,30,'30','2017-01-01')
+    daily_train_lstm(code, batch_size, time_step, term, date)
     db_close()
