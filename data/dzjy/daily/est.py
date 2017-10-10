@@ -18,13 +18,6 @@ rnn_unit=30
 #获取测试集
 def get_test_data(code,time_step,term,date):
     mean,std,test_x,future_price = None,None,[],None
-    #如果当天不是交易日，返回空
-    cursor.execute('SELECT count(1) count FROM stock_history WHERE stock_history.`code` = %s AND stock_history.date = %s', [code, date])
-    result = cursor.fetchone()
-    count = result[0]
-    #如果有记录，更新
-    if count == 0:
-        return mean,std,test_x,future_price
 
     stock_history_list = []
     stock_price_list = []
@@ -156,19 +149,7 @@ def get_test_data(code,time_step,term,date):
 
     return mean,std,test_x,future_price
 
-
-def getCodeList(market):
-    global conn
-    global cursor
-    stock_list = []
-    cursor.execute(stock_sql.stock_market_select_sql , [market])
-    results = cursor.fetchall()
-    for result in results:
-        stock_list.append(result[6])
-    return stock_list
-
-
-def predict_lstm(code,time_step,term,begin,end):
+def predict_lstm(code,time_step,term,date):
     with tf.variable_scope(code + '_' + term, reuse=None):
         #输入层、输出层权重、偏置
         weights={
@@ -197,44 +178,32 @@ def predict_lstm(code,time_step,term,begin,end):
         pred=tf.matmul(output,w_out)+b_out
         saver=tf.train.Saver()
 
-        begindate=datetime.datetime.strptime(begin,'%Y-%m-%d')
-        enddate=datetime.datetime.strptime(end,'%Y-%m-%d')
+        mean,std,test_x,future_price = get_test_data(code,time_step,term,date)
 
-        while begindate<=enddate:
-            date = begindate.strftime('%Y-%m-%d')
+        with tf.Session() as sess:
+            #参数恢复
+            code_path = '/home/ayesha/data/models/'+code
+            model_path = code_path + '/' + term
+            module_file = tf.train.latest_checkpoint(model_path)
+            saver.restore(sess, module_file)
 
-            mean,std,test_x,future_price = get_test_data(code,time_step,term,date)
-            if len(test_x) == 0:
-                begindate+=datetime.timedelta(days=1)
-                continue
+            test_predict=[]
+            for step in range(len(test_x)):
+                prob = sess.run(pred,feed_dict={X:[test_x[step]]})
+                predict = prob.reshape((-1))
+                test_predict.extend(predict)
 
+            #预测值
+            test_predict = np.array(test_predict) * float(std) + float(mean)
+            #print(test_predict)
+            est_price = test_predict[-1]
 
-            with tf.Session() as sess:
-                #参数恢复
-                code_path = '/home/ayesha/data/models/'+code
-                model_path = code_path + '/' + term
-                module_file = tf.train.latest_checkpoint(model_path)
-                saver.restore(sess, module_file)
-
-                test_predict=[]
-                for step in range(len(test_x)):
-                    prob = sess.run(pred,feed_dict={X:[test_x[step]]})
-                    predict = prob.reshape((-1))
-                    test_predict.extend(predict)
-
-                #预测值
-                test_predict = np.array(test_predict) * float(std) + float(mean)
-                #print(test_predict)
-                est_price = test_predict[-1]
-
-                print('insert or update estimate data, code = '+code+', date = '+date +', term = ' + term)
-                insert_or_update_data([code,date,
-                        est_price,
-                        future_price,
-                        est_price,
-                        future_price],term)
-                
-            begindate+=datetime.timedelta(days=1)
+            print('insert or update estimate data, code = '+code+', date = '+date +', term = ' + term)
+            insert_or_update_data([code,date,
+                    est_price,
+                    future_price,
+                    est_price,
+                    future_price],term)
 
 
 def insert_or_update_data(params,term):
@@ -253,21 +222,6 @@ def insert_or_update_data(params,term):
         ]),params)
     conn.commit()
 
-def predict(time_step,term,begin,end):
-    global conn
-    global cursor
-    conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-    cursor = conn.cursor()
-
-    for market in markets:
-        code_list = getCodeList(market)
-        for code in code_list:
-            predict_lstm(code,time_step,term,begin,end)
-
-    #关闭数据库连接
-    cursor.close()
-    conn.close()
-
 def db_connect():
     global conn
     global cursor
@@ -278,17 +232,11 @@ def db_close():
     cursor.close()
     conn.close()
 
-def reverse(arr):
-    reverse_arr = []
-    for i in range(len(arr)-1,-1,-1):
-        reverse_arr.append(arr[i])
-    return reverse_arr
-
 if __name__ == '__main__':
     db_connect()
     code = sys.argv[1]
-    time_step = int(sys.argv[3])
-    term = sys.argv[4]
-    date = sys.argv[5]
+    time_step = int(sys.argv[2])
+    term = sys.argv[3]
+    date = sys.argv[4]
     predict_lstm(code,time_step,term,date)
     db_close()
