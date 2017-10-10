@@ -35,16 +35,7 @@ def getCodeList(market):
         stock_list.append(result[6])
     return stock_list
 
-def db_connect():
-    global conn
-    global cursor
-    conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-    cursor = conn.cursor()
 
-def db_close():
-    #关闭数据库连接
-    cursor.close()
-    conn.close()
 
 if __name__ == '__main__':
     db_connect()

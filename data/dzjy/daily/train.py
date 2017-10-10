@@ -5,78 +5,22 @@ import config
 import MySQLdb as mdb
 import os
 import sys
-
-#市场
-markets = ['sh','sz']
+import db.db as db
+import db.stock as stock
 
 #定义常量
 rnn_unit=30
 input_size=7
 output_size=1
 
-
 #学习率
 lr=0.0006
 
-conn = None
-cursor = None
-
-
 #获取训练集
-def get_train_data(code,batch_size,time_step,term,date):
+def get_train_data(code,batch_size,time_step,term,date,cursor):
     stock_history_list = []
     stock_price_list = []
-    cursor.execute(''.join([
-            '       SELECT ',
-            '            * ',
-            '        FROM ',
-            '            ( ',
-            '                SELECT ',
-            '                    t.trade_num, ',
-            '                    t.fq_close_price, ',
-            '                    t.trade_money,  ',
-            '                    t.circulation_value,  ',
-            '                    t.trade_money / t.circulation_value * 100 trade_rate, ',
-            '                    t.turnover_rate, ',
-            '                    ifnull( ',
-            '                        sum(t2.tvol * t2.PRICE * 10000) / t.circulation_value * 100, ',
-            '                        0 ',
-            '                    ) dzjy_rate, ',
-            '                    d.future_price_30, ',
-            '                    t.date ',
-            '                FROM ',
-            '                    stock_history t ',
-            '                LEFT JOIN dzjy_history t2 ON t.date = t2.tdate ',
-            '                AND t.`code` = t2.secucode ',
-            '                LEFT JOIN stock_train_data d ON d.`code` = t.`code` ',
-            '                AND d.date = t.date ',
-            '                WHERE ',
-            '                    t.date <= %s  ',
-            '                AND t.`code` = %s  ',
-            '                AND t.date IS NOT NULL ',
-            '                AND t.trade_num IS NOT NULL ',
-            '                AND t.trade_money IS NOT NULL ',
-            '                AND t.fq_close_price IS NOT NULL ',
-            '                AND t.turnover_rate IS NOT NULL ',
-            '                AND d.future_price_30 IS NOT NULL ',
-            '                AND t.close_price IS NOT NULL ',
-            '                GROUP BY ',
-            '                    t.date, ',
-            '                    t.close_price, ',
-            '                    t.trade_num, ',
-            '                    t.trade_money, ',
-            '                    t.fq_close_price, ',
-            '                    t.turnover_rate, ',
-            '                    d.future_price_30 ',
-            '                ORDER BY ',
-            '                    t.date DESC ',
-            '                LIMIT 0, ',
-            '                '+ str(config.MAX_DATA_SIZE) +' ',
-            '            ) tt ',
-            '        ORDER BY ',
-            '            date ASC',
-        ]) , [date,code])
-    results = cursor.fetchall()
+    results = stock.get_train_data(code,date,config.MAX_DATA_SIZE,cursor)
     for result in results:
         stock_history = []
         stock_price = []
@@ -161,7 +105,7 @@ def get_train_data(code,batch_size,time_step,term,date):
     batch_index.append((len(stock_history_arr)-time_step))
     return batch_index,train_x,train_y
 
-def daily_train_lstm(code,batch_size,time_step,term,date):
+def daily_train_lstm(code,batch_size,time_step,term,date,cursor):
     with tf.variable_scope(code + '_' + term, reuse=None):
         code_path = '/home/ayesha/data/models/'+code
         model_path = code_path + '/' + term
@@ -173,7 +117,7 @@ def daily_train_lstm(code,batch_size,time_step,term,date):
 
         X=tf.placeholder(tf.float32, shape=[None,time_step,input_size])
         Y=tf.placeholder(tf.float32, shape=[None,time_step,output_size])
-        batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,date)
+        batch_index,train_x,train_y = get_train_data(code,batch_size,time_step,term,date,cursor)
         weights={
              'in':tf.Variable(tf.random_normal([input_size,rnn_unit])),
              'out':tf.Variable(tf.random_normal([rnn_unit,1]))
@@ -216,55 +160,12 @@ def daily_train_lstm(code,batch_size,time_step,term,date):
             #保存模型
             print("save model : ", saver.save(sess, model_path + '/stock.model',global_step=global_step))
 
-#训练函数
-def daily_train(batch_size,time_step,term,date):
-    for market in markets:
-        code_list = getCodeList(market)
-        for code in code_list:
-            daily_train_lstm(code,batch_size,time_step,term,begin,end)
-
-def getCodeList(market):
-    stock_list = []
-    cursor.execute(''.join(['SELECT ',
-                                'stock.stockType, ',
-                                'stock.market, ',
-                                'stock.`name`, ',
-                                'stock.state, ',
-                                'stock.currcapital, ',
-                                'stock.profit_four, ',
-                                'stock.`code`, ',
-                                'stock.totalcapital, ',
-                                'stock.mgjzc, ',
-                                'stock.pinyin, ',
-                                'stock.listing_date, ',
-                                'stock.ct ',
-                            'FROM ',
-                                'stock ',
-                            'WHERE ',
-                                'stock.market = %s ']) , [market])
-    results = cursor.fetchall()
-    for result in results:
-        stock_list.append(result[6])
-    return stock_list
-
-def db_connect():
-    global conn
-    global cursor
-    conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-    cursor = conn.cursor()
-
-def db_close():
-    cursor.close()
-    conn.close()
-
 if __name__ == '__main__':
-    db_connect()
+    conn,cursor = db.db_connect()
     code = sys.argv[1]
     batch_size = int(sys.argv[2])
     time_step = int(sys.argv[3])
     term = sys.argv[4]
     date = sys.argv[5]
-    #daily_train(80,30,'30','2013-01-01')
-    #daily_train_lstm('600000',80,30,'30','2017-01-01')
-    daily_train_lstm(code, batch_size, time_step, term, date)
-    db_close()
+    daily_train_lstm(code, batch_size, time_step, term, date,cursor)
+    db.db_close(conn,cursor)
