@@ -8,6 +8,7 @@ import db.db as db
 import db.stock as stock
 import db.stock_est_data as stock_est_data
 import config
+import multiprocessing
 
 input_size=7
 
@@ -158,11 +159,41 @@ def predict_lstm(code,time_step,term,date,cursor):
 
 
 if __name__ == '__main__':
+    '''
     conn,cursor = db.db_connect()
     code = sys.argv[1]
     time_step = int(sys.argv[2])
     term = sys.argv[3]
     date = sys.argv[4]
     predict_lstm(code,time_step,term,date,cursor)
+    conn.commit()
+    db.db_close(conn,cursor)
+    '''
+
+
+    conn,cursor = db.db_connect()
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    if len(sys.argv) == 2 and sys.argv[1] != None:
+        date = sys.argv[1]
+
+        pool = multiprocessing.Pool(processes=config.EST_PROCESS_NUM)
+        result = []
+
+        for market in config.MARKETS:
+            code_list = stock.get_stock_by_market(market,cursor)
+            for code in code_list:
+                result.append(pool.apply_async(predict_lstm, (code,30,'30',date,cursor)))
+        pool.close()
+        pool.join()
+
+        for res in result:
+            print ":::", res.get()
+
+
+    if len(sys.argv) == 1:
+        date = today
+        for market in config.MARKETS:
+            code_list = stock.get_stock_by_market(market,cursor)
+
     conn.commit()
     db.db_close(conn,cursor)
