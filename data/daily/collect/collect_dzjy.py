@@ -113,7 +113,6 @@ def updateDZJY(page,cursor):
                                     RCHANGE5DC,
                                     RCHANGE10DC,
                                     RCHANGE20DC])
-    conn.commit()
 
 def getDZJYdata(page):
     url = 'http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?type=DZJYXQ&token=70f12f2f4f091e459a279469fe49eca5&cmd=&st={sortType}&sr={sortRule}&p='+str(page)+'&ps={pageSize}&js={pages:(tp),data:(x)}'
