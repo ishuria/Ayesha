@@ -59,7 +59,6 @@ def get_train_data(code,batch_size,time_step,term,date,cursor):
         
         stock_history_list.append(stock_history)
         stock_price_list.append(stock_price)
-    conn.commit()
 
     stock_history_arr = np.array(stock_history_list)
     stock_price_arr = np.array(stock_price_list)

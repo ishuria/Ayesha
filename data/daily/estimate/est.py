@@ -1,14 +1,12 @@
 # -*- coding: UTF-8 -*-  
 import numpy as np
 import tensorflow as tf
-import config
-import MySQLdb as mdb
 import datetime
 import decimal
 import sys
-
-conn = None
-cursor = None
+import db.db as db
+import db.stock as stock
+import db.stock_est_data as stock_est_data
 
 input_size=7
 
@@ -16,62 +14,14 @@ rnn_unit=30
 
 
 #获取测试集
-def get_test_data(code,time_step,term,date):
+def get_test_data(code,time_step,term,date,cursor):
     mean,std,test_x,future_price = None,None,[],None
 
     stock_history_list = []
     stock_price_list = []
-    cursor.execute(''.join([
-            '       SELECT ',
-            '            * ',
-            '        FROM ',
-            '            ( ',
-            '                SELECT ',
-            '                    t.trade_num, ',
-            '                    t.fq_close_price, ',
-            '                    t.trade_money,  ',
-            '                    t.circulation_value,  ',
-            '                    t.trade_money / t.circulation_value * 100 trade_rate, ',
-            '                    t.turnover_rate, ',
-            '                    ifnull( ',
-            '                        sum(t2.tvol * t2.PRICE * 10000) / t.circulation_value * 100, ',
-            '                        0 ',
-            '                    ) dzjy_rate, ',
-            '                    d.future_price_30, ',
-            '                    t.date ',
-            '                FROM ',
-            '                    stock_history t ',
-            '                LEFT JOIN dzjy_history t2 ON t.date = t2.tdate ',
-            '                AND t.`code` = t2.secucode ',
-            '                LEFT JOIN stock_train_data d ON d.`code` = t.`code` ',
-            '                AND d.date = t.date ',
-            '                WHERE ',
-            '                    t.date <= %s  ',
-            '                AND t.`code` = %s  ',
-            '                AND t.date IS NOT NULL ',
-            '                AND t.trade_num IS NOT NULL ',
-            '                AND t.trade_money IS NOT NULL ',
-            '                AND t.fq_close_price IS NOT NULL ',
-            '                AND t.turnover_rate IS NOT NULL ',
-            '                AND d.future_price_30 IS NOT NULL ',
-            '                AND t.close_price IS NOT NULL ',
-            '                GROUP BY ',
-            '                    t.date, ',
-            '                    t.close_price, ',
-            '                    t.trade_num, ',
-            '                    t.trade_money, ',
-            '                    t.fq_close_price, ',
-            '                    t.turnover_rate, ',
-            '                    d.future_price_30 ',
-            '                ORDER BY ',
-            '                    t.date DESC ',
-            '                LIMIT 0, ',
-            '                '+ str(config.MAX_DATA_SIZE) +' ',
-            '            ) tt ',
-            '        ORDER BY ',
-            '            date ASC',
-        ]) , [date,code])
-    results = cursor.fetchall()
+    
+    results = stock.get_estimation_data(code,date,config.MAX_DATA_SIZE,cursor)
+
     for result in results:
         stock_history = []
         stock_price = []
@@ -109,14 +59,11 @@ def get_test_data(code,time_step,term,date):
         #future_price
         stock_price.append((result[7]))
         stock_price_list.append(stock_price)
-    conn.commit()
 
-
-
+    if len(stock_history_list) == 0:
+        return mean,std,test_x,future_price
 
     stock_history_arr = np.array(stock_history_list)
-
-    
 
 
     trade_num_arr = stock_history_arr[:,0]
@@ -146,10 +93,9 @@ def get_test_data(code,time_step,term,date):
     #未来的真实值，可能为空
     future_price = stock_price_list[-1][0]
 
-
     return mean,std,test_x,future_price
 
-def predict_lstm(code,time_step,term,date):
+def predict_lstm(code,time_step,term,date,cursor):
     with tf.variable_scope(code + '_' + term, reuse=None):
         #输入层、输出层权重、偏置
         weights={
@@ -178,7 +124,10 @@ def predict_lstm(code,time_step,term,date):
         pred=tf.matmul(output,w_out)+b_out
         saver=tf.train.Saver()
 
-        mean,std,test_x,future_price = get_test_data(code,time_step,term,date)
+        mean,std,test_x,future_price = get_test_data(code,time_step,term,date,cursor)
+
+        if len(test_x) == 0:
+            return
 
         with tf.Session() as sess:
             #参数恢复
@@ -198,45 +147,20 @@ def predict_lstm(code,time_step,term,date):
             #print(test_predict)
             est_price = test_predict[-1]
 
-            print('insert or update estimate data, code = '+code+', date = '+date +', term = ' + term)
-            insert_or_update_data([code,date,
+            print('refreshing stock est data ' + code + ' ' + date)
+            params = [code,date,
                     est_price,
                     future_price,
                     est_price,
-                    future_price],term)
+                    future_price]
+            stock_est_data.refresh_stock_est_data(params,cursor)
 
-
-def insert_or_update_data(params,term):
-    cursor.execute(''.join([
-        'INSERT INTO stock_est_data ( ',
-        '   `code`, ',
-        '   date, ',
-        '   est_price_'+term+', ',
-        '   future_price_'+term+' '
-        ') ',
-        'VALUES ',
-        '   ( ',
-        '       % s ,% s ,% s ,% s ',
-        '   ) ON DUPLICATE KEY UPDATE est_price_' + term + ' = % s, ',
-        '   future_price_' + term + ' = % s ',
-        ]),params)
-    conn.commit()
-
-def db_connect():
-    global conn
-    global cursor
-    conn = mdb.connect(host=config.mysql_ip, port=config.mysql_port,user=config.mysql_user,passwd=config.mysql_pass,db=config.mysql_db,charset='utf8')
-    cursor = conn.cursor()
-
-def db_close():
-    cursor.close()
-    conn.close()
 
 if __name__ == '__main__':
-    db_connect()
+    conn,cursor = db.db_connect()
     code = sys.argv[1]
     time_step = int(sys.argv[2])
     term = sys.argv[3]
     date = sys.argv[4]
     predict_lstm(code,time_step,term,date)
-    db_close()
+    db.db_close(conn,cursor)
