@@ -13,3 +13,5 @@ DAILY_TRAINING_STEPS = 20
 
 PRICE_HOST = 'http://quotes.money.163.com/service/chddata.html'
 FQ_PRICE_HOST = 'http://img1.money.126.net/data/hs/klinederc/day/times'
+
+EST_PROCESS_NUM = 10

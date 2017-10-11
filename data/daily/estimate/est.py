@@ -164,4 +164,5 @@ if __name__ == '__main__':
     term = sys.argv[3]
     date = sys.argv[4]
     predict_lstm(code,time_step,term,date,cursor)
+    conn.commit()
     db.db_close(conn,cursor)
