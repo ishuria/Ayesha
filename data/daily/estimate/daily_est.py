@@ -14,9 +14,9 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         date = today
         for market in config.MARKETS:
-            code_list = getCodeList(market)
+            code_list = stock.get_stock_by_market(market,cursor)
             for code in code_list:
-                command = 'python est.py' + ' ' + code + ' ' + str(30) + ' ' + '30' + ' ' + date
+                command = 'python -m daily.estimate.est' + ' ' + code + ' ' + str(30) + ' ' + '30' + ' ' + date
                 p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 for line in p.stdout.readlines():
                     print line,
@@ -24,9 +24,9 @@ if __name__ == '__main__':
     if len(sys.argv) == 2 and sys.argv[1] != None:
         date = sys.argv[1]
         for market in config.MARKETS:
-            code_list = getCodeList(market)
+            code_list = stock.get_stock_by_market(market,cursor)
             for code in code_list:
-                command = 'python est.py' + ' ' + code + ' ' + str(30) + ' ' + '30' + ' ' + date
+                command = 'python -m daily.estimate.est' + ' ' + code + ' ' + str(30) + ' ' + '30' + ' ' + date
                 p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 for line in p.stdout.readlines():
                     print line,

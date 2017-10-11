@@ -7,6 +7,7 @@ import sys
 import db.db as db
 import db.stock as stock
 import db.stock_est_data as stock_est_data
+import config
 
 input_size=7
 
@@ -162,5 +163,5 @@ if __name__ == '__main__':
     time_step = int(sys.argv[2])
     term = sys.argv[3]
     date = sys.argv[4]
-    predict_lstm(code,time_step,term,date)
+    predict_lstm(code,time_step,term,date,cursor)
     db.db_close(conn,cursor)
