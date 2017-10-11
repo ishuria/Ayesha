@@ -12,20 +12,20 @@ if __name__ == '__main__':
     today = datetime.date.today().strftime("%Y-%m-%d")
     if len(sys.argv) == 1:
         date = today
-        for market in config.markets:
+        for market in config.MARKETS:
             code_list = stock.get_stock_by_market(market,cursor)
             for code in code_list:
-                command = 'python train.py' + ' ' + code + ' ' + str(80) + ' ' + str(30) + ' ' + '30' + ' ' + date
+                command = 'python -m daily.train.train' + ' ' + code + ' ' + str(80) + ' ' + str(30) + ' ' + '30' + ' ' + date
                 p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 for line in p.stdout.readlines():
                     print line,
                 retval = p.wait()
     if len(sys.argv) == 2 and sys.argv[1] != None:
         date = sys.argv[1]
-        for market in config.markets:
+        for market in config.MARKETS:
             code_list = stock.get_stock_by_market(market,cursor)
             for code in code_list:
-                command = 'python train.py' + ' ' + code + ' ' + str(80) + ' ' + str(30) + ' ' + '30' + ' ' + date
+                command = 'python -m daily.train.train' + ' ' + code + ' ' + str(80) + ' ' + str(30) + ' ' + '30' + ' ' + date
                 p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 for line in p.stdout.readlines():
                     print line,

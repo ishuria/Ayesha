@@ -5,6 +5,7 @@ import ssl
 import json
 import time
 import db.db as db
+import traceback
 
 page = 0
 total_page = 9999
@@ -134,6 +135,8 @@ def update_daily():
         try:
             updateDZJY(page,cursor)
         except:
+            print 'traceback.print_exc():'; traceback.print_exc()
+            page = page + 1
             continue
         page = page + 1
         time.sleep( 2 )
@@ -151,6 +154,8 @@ if __name__ == '__main__':
         try:
             updateDZJY(page,cursor)
         except:
+            print 'traceback.print_exc():'; traceback.print_exc()
+            page = page + 1
             continue
         page = page + 1
         time.sleep( 2 )
