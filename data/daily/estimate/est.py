@@ -8,7 +8,8 @@ import db.db as db
 import db.stock as stock
 import db.stock_est_data as stock_est_data
 import config
-import multiprocessing
+import threadpool
+from multiprocessing import Pool
 
 input_size=7
 
@@ -97,7 +98,8 @@ def get_test_data(code,time_step,term,date,cursor):
 
     return mean,std,test_x,future_price
 
-def predict_lstm(code,time_step,term,date,cursor):
+def predict_lstm(code,time_step,term,date):
+    conn,cursor = db.db_connect()
     with tf.variable_scope(code + '_' + term, reuse=None):
         #输入层、输出层权重、偏置
         weights={
@@ -156,38 +158,74 @@ def predict_lstm(code,time_step,term,date,cursor):
                     est_price,
                     future_price]
             stock_est_data.refresh_stock_est_data(params,cursor)
+    conn.commit()
+    db.db_close(conn,cursor)
 
 
 if __name__ == '__main__':
-    '''
+
     conn,cursor = db.db_connect()
     code = sys.argv[1]
     time_step = int(sys.argv[2])
     term = sys.argv[3]
     date = sys.argv[4]
-    predict_lstm(code,time_step,term,date,cursor)
+    predict_lstm(code,time_step,term,date)
     conn.commit()
     db.db_close(conn,cursor)
+
+
     '''
-
-
     conn,cursor = db.db_connect()
     today = datetime.date.today().strftime("%Y-%m-%d")
     if len(sys.argv) == 2 and sys.argv[1] != None:
         date = sys.argv[1]
 
-        pool = multiprocessing.Pool(processes=config.EST_PROCESS_NUM)
-        result = []
+        for market in config.MARKETS:
+            code_list = stock.get_stock_by_market(market,cursor)
+
+
+            args = []
+            for code in code_list:
+                arg = {'code':code,'time_step':30,'term':'30','date':date}
+                args.append((None, arg))
+
+            print(args)
+            pool = threadpool.ThreadPool(config.EST_PROCESS_NUM)
+            requests = threadpool.makeRequests(predict_lstm, args)
+
+            [pool.putRequest(req) for req in requests]
+            pool.wait()
+
+    if len(sys.argv) == 1:
+        date = today
+        for market in config.MARKETS:
+            code_list = stock.get_stock_by_market(market,cursor)
+
+    conn.commit()
+    db.db_close(conn,cursor)
+    '''
+    '''
+    conn,cursor = db.db_connect()
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    if len(sys.argv) == 2 and sys.argv[1] != None:
+        date = sys.argv[1]
 
         for market in config.MARKETS:
             code_list = stock.get_stock_by_market(market,cursor)
+
+
+            pool = Pool(config.EST_PROCESS_NUM)
+            result = []
             for code in code_list:
-                result.append(pool.apply_async(predict_lstm, (code,30,'30',date,cursor)))
-        pool.close()
-        pool.join()
+                result.append(pool.apply_async(predict_lstm, (code,30,'30',date)))
+
+            
+            pool.close()
+            pool.join()
 
         for res in result:
-            print ":::", res.get()
+            print res.get()
+        print "Sub-process(es) done."
 
 
     if len(sys.argv) == 1:
@@ -197,3 +235,4 @@ if __name__ == '__main__':
 
     conn.commit()
     db.db_close(conn,cursor)
+    '''
