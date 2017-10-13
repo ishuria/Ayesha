@@ -16,4 +16,4 @@ FQ_PRICE_HOST = 'http://img1.money.126.net/data/hs/klinederc/day/times'
 
 EST_PROCESS_NUM = 10
 
-TRAIN_PROCESS_NUM = 10
+TRAIN_PROCESS_NUM = 2
