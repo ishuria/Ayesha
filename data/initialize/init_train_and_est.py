@@ -4,6 +4,7 @@ import db.stock as stock
 import multiprocessing
 import datetime
 import subprocess
+import config
 
 
 def start_est_process(command):
@@ -25,8 +26,6 @@ def start_train_process(command):
 
 
 if __name__ == '__main__':
-    
-
     begin = '2017-01-05'
     end = '2017-02-01'
 
@@ -36,13 +35,15 @@ if __name__ == '__main__':
     enddate = datetime.datetime.strptime(end,'%Y-%m-%d')
 
     while begindate <= enddate:
-    	conn,cursor = db.db_connect()
+
+        date = begindate.strftime("%Y-%m-%d")
+        conn,cursor = db.db_connect()
         for market in config.MARKETS:
             code_list = stock.get_stock_by_market(market,cursor)
             pool = multiprocessing.Pool(processes=config.TRAIN_PROCESS_NUM)
             for i in xrange(len(code_list)):
                 code = code_list[i]
-                command = 'python -m daily.train.train' + ' ' + code + ' ' + str(80) + ' ' + str(30) + ' ' + '30' + ' ' + begindate
+                command = 'python -m daily.train.train' + ' ' + code + ' ' + str(80) + ' ' + str(30) + ' ' + '30' + ' ' + date
                 pool.apply_async(start_train_process, (command, ))
             pool.close()
             pool.join()
@@ -52,7 +53,7 @@ if __name__ == '__main__':
             pool = multiprocessing.Pool(processes=config.EST_PROCESS_NUM)
             for i in xrange(len(code_list)):
                 code = code_list[i]
-                command = 'python -m daily.estimate.est' + ' ' + code + ' ' + str(30) + ' ' + '30' + ' ' + begindate
+                command = 'python -m daily.estimate.est' + ' ' + code + ' ' + str(30) + ' ' + '30' + ' ' + date
                 pool.apply_async(start_est_process, (command, ))
             pool.close()
             pool.join()
@@ -60,7 +61,3 @@ if __name__ == '__main__':
         conn.commit()
         db.db_close(conn,cursor)
         begindate += datetime.timedelta(days=1)
-
-        
-
-    
