@@ -26,8 +26,8 @@ def start_train_process(command):
 
 
 if __name__ == '__main__':
-    begin = '2017-01-05'
-    end = '2017-02-01'
+    begin = '2017-02-01'
+    end = '2017-03-01'
 
     today = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -61,3 +61,7 @@ if __name__ == '__main__':
         conn.commit()
         db.db_close(conn,cursor)
         begindate += datetime.timedelta(days=1)
+
+        clear_process = subprocess.Popen('python -m daily.post.clear_old_model_file', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        retval = clear_process.wait()
+
