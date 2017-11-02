@@ -19,7 +19,8 @@ def calc(code,begin,end,cursor):
             '            t.date, ',
             '            t.est_price_30, ',
             '            t.future_price_30, ',
-            '            d.fq_close_price ',
+            '            d.fq_close_price, ',
+            '            d.close_price ',
             '        FROM ',
             '            stock_est_data t inner join stock_history d on d.`code` = t.`code` and d.date = t.date',
             '        WHERE ',
@@ -43,15 +44,18 @@ def calc(code,begin,end,cursor):
         est_price_30 = float(result[2])
         future_price_30 = float(result[3])
         fq_close_price = float(result[4])
+        diff = future_price_30 - fq_close_price
+        close_price = float(result[5])
+        future_price = close_price + diff
 
 
         if est_price_30 > fq_close_price:
-            if left > fq_close_price * 1000:
-                left -= fq_close_price * 1000
+            if left > close_price * 10000:
+                left -= close_price * 10000
                 cost = []
-                cost.append(fq_close_price)
-                cost.append(1000)
-                cost.append(future_price_30)
+                cost.append(close_price)
+                cost.append(10000)
+                cost.append(future_price)
                 cost_list.append(cost)
             else:
                 pass
@@ -80,6 +84,6 @@ def calc(code,begin,end,cursor):
 
 if __name__ == '__main__':
     conn,cursor = db.db_connect()
-    calc('600000','2017-01-01','2017-02-01',cursor)
+    calc('600000','2017-01-01','2017-03-01',cursor)
     conn.commit()
     db.db_close(conn,cursor)
