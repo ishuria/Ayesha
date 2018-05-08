@@ -8,6 +8,7 @@ from requests.auth import HTTPBasicAuth
 
 import cell_num
 
+
 def post_login():
 
     url = "https://www.url"
@@ -62,7 +63,9 @@ def post_signup():
     values['phone'] = '+86'+cell_num.gen_random_cell_num()
     values['country_code'] = 'cn'
     values['password'] = '123456'
-    values['inviter_id'] = '4327401'
+    values['inviter_id'] = '4327402'
+    #values['inviter_id'] = '4325572'
+    
     #临时解决https的问题
     response = requests.post(url,values,verify=True)
     print(response.text)
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     #get_login()
     # post_loginHttps1()
     #post_loginHttps2()
-    for i in range(8):
+    for i in range(2):
         post_signup()
 
     #出现下面错误的原因主要是因为打开了fiddler，关闭fiddler即可。
