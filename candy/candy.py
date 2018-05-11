@@ -4,6 +4,9 @@ import ssl
 from requests.auth import HTTPBasicAuth
 import configparser
 import time
+import traceback
+
+proxies = { "http": "http://10.10.1.10:3128", "https": "http://127.0.0.1:1080", } 
 
 cp=configparser.ConfigParser()
 
@@ -22,7 +25,7 @@ def save_last_phone_num(phone_num):
 def main():
     phone_num = get_last_phone_num()
     #调用注册函数
-    post_signup(phone_num,"123456","4325572","cn")
+    post_signup(phone_num,"123456","4640652","cn")
     phone_num=int(phone_num)+1
     save_last_phone_num(phone_num)
 
@@ -40,12 +43,20 @@ def post_signup(phone_num,password,inviter_id,country_code):
     #values['inviter_id'] = '4325572'
     
     #临时解决https的问题
-    response = requests.post(url,values,verify=True)
+    response = requests.post(url,values,verify=True,proxies=proxies)
     #print(response.text)
 
 
 if __name__ == '__main__':
     while(True):
-        main()
+        try:
+            main()
+        except Exception as e:
+            print ('str(Exception):\t', str(Exception))
+            print ('str(e):\t\t', str(e))
+            print ('repr(e):\t', repr(e))
+            #print ('e.message:\t', e.message)
+            print ('traceback.print_exc():', traceback.print_exc())
+            print ('traceback.format_exc():\n%s' % traceback.format_exc())
         print("sleep")
-        time.sleep(5)
+        time.sleep(1)
