@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.typesafe.play:play-netty-server_2.11:2.4.8">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.typesafe.play/play-netty-server_2.11/2.4.8/2f9fe7673dcb0a2631093fc5609025d0a074a9e/play-netty-server_2.11-2.4.8.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.typesafe.play/play-netty-server_2.11/2.4.8/7ba243d5dbf7f4c96dbf40dcf79ae6b6f08fdd4f/play-netty-server_2.11-2.4.8-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

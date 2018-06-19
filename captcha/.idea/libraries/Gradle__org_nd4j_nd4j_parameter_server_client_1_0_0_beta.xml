@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.nd4j:nd4j-parameter-server-client:1.0.0-beta">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.nd4j/nd4j-parameter-server-client/1.0.0-beta/993252eca98fde611bb860fc687db5684ca9e731/nd4j-parameter-server-client-1.0.0-beta.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.nd4j/nd4j-parameter-server-client/1.0.0-beta/7a9b2b10f1971365bb3f8ccc841fa8762c0f88d/nd4j-parameter-server-client-1.0.0-beta-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

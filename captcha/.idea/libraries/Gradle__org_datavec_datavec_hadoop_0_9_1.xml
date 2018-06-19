@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.datavec:datavec-hadoop:0.9.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.datavec/datavec-hadoop/0.9.1/5ca226466761c95a835a008755a1fd18a6fa1009/datavec-hadoop-0.9.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.datavec/datavec-hadoop/0.9.1/20604c11ae524fc80f2582fb04ca3eb4bd2c77ce/datavec-hadoop-0.9.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

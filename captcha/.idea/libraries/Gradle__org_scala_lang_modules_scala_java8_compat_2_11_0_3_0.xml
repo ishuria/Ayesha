@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.scala-lang.modules:scala-java8-compat_2.11:0.3.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.scala-lang.modules/scala-java8-compat_2.11/0.3.0/ec662f5a021f5e118b38249cebd291cb62db48f5/scala-java8-compat_2.11-0.3.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.scala-lang.modules/scala-java8-compat_2.11/0.3.0/791523cd2f8853c6d4c83fb9b06642ff074ffe83/scala-java8-compat_2.11-0.3.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

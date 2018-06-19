@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.fusesource.hawtjni:hawtjni-runtime:1.8">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.fusesource.hawtjni/hawtjni-runtime/1.8/9d2d5739cf8f47d25afec240847fb72fe6ee86df/hawtjni-runtime-1.8.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.fusesource.hawtjni/hawtjni-runtime/1.8/85eafe1c8a05f76a447b1c87953cba50b60f85a1/hawtjni-runtime-1.8-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,229 @@
+Thu, 24 May 2018 11:55:35  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 11:55:44  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 11:55:44  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 11:55:44  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 11:55:44  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 11:55:44  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 11:55:44  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 11:55:44  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 11:55:50  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 11:55:55  QQBot.py[line:293] INFO b'66'
+Thu, 24 May 2018 11:55:55  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 11:56:02  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 11:56:02  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 11:56:02  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=e3cbf67c33ba88afa18daf9ddb50161080976fbf13334915d9c177db91f0c7eec280a3c69090fb828f0e82bb0bf1d1346681ae0631f364c396b0ecafd9d7c00a&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 11:56:02  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 11:56:11  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 11:56:11  QQBot.py[line:323] INFO PTWebQQ: 5ef515b0d8f83a093afea1d7984f6d07de7a3dc07b79750ab15aa63fd25951e5
+Thu, 24 May 2018 11:56:11  QQBot.py[line:342] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 11:56:11  QQBot.py[line:342] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 11:56:11  QQBot.py[line:342] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 11:56:11  QQBot.py[line:750] CRITICAL local variable 'ret2' referenced before assignment
+Thu, 24 May 2018 11:58:37  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 11:58:50  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 11:58:50  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 11:58:50  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 11:58:50  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 11:58:50  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 11:58:50  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 11:58:50  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 11:58:56  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 11:59:02  QQBot.py[line:293] INFO b'66'
+Thu, 24 May 2018 11:59:02  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 11:59:09  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 11:59:09  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 11:59:09  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=e614566ef82314b49b51df837f169f3786b32e61150e4d8a9f3ea03a79371a8730f49c27117c85c71ae59976b3cacd89a0732031e2bb56115ea273184b3791db&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 11:59:09  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 11:59:17  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 11:59:17  QQBot.py[line:323] INFO PTWebQQ: 55d2dd550fa05ed77b7fb1ec9598dd933ed0f87fecdb844e4accc0fa8a7b8bd2
+Thu, 24 May 2018 11:59:17  QQBot.py[line:341] ERROR ERROR:module 'urllib' has no attribute 'urlencode'
+Thu, 24 May 2018 11:59:17  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 11:59:17  QQBot.py[line:341] ERROR ERROR:module 'urllib' has no attribute 'urlencode'
+Thu, 24 May 2018 11:59:17  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 11:59:17  QQBot.py[line:341] ERROR ERROR:module 'urllib' has no attribute 'urlencode'
+Thu, 24 May 2018 11:59:17  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 11:59:17  QQBot.py[line:751] CRITICAL local variable 'ret2' referenced before assignment
+Thu, 24 May 2018 12:00:10  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 12:01:23  QQBot.py[line:751] CRITICAL <urlopen error [Errno 2] No such file or directory>
+Thu, 24 May 2018 12:01:26  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 12:01:36  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 12:01:36  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 12:01:36  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 12:01:36  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 12:01:36  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 12:01:36  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 12:01:36  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 12:01:42  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 12:01:47  QQBot.py[line:293] INFO b'66'
+Thu, 24 May 2018 12:01:47  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 12:01:54  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 12:01:54  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 12:01:54  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=4e5d14ae3a11aaf7788bf4de1a6e0dfe642c6487639c2d82a5dfcf6d1165e8b7279bd1d7a49354dd5538f4ed4aa47addb4c1ca388f298edec46d58b8dafa9bbf&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 12:01:54  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 12:02:04  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 12:02:04  QQBot.py[line:323] INFO PTWebQQ: 440935cdff301910d5db426615b5a7ee9feb3a016db065a2f5016a3920fe6325
+Thu, 24 May 2018 12:02:04  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 12:02:04  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 12:02:04  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 12:02:04  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 12:02:04  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 12:02:04  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 12:02:04  QQBot.py[line:751] CRITICAL local variable 'ret2' referenced before assignment
+Thu, 24 May 2018 15:45:00  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 15:45:11  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 15:45:11  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 15:45:11  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 15:45:11  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 15:45:11  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 15:45:11  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 15:45:11  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 15:45:16  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 15:45:21  QQBot.py[line:293] INFO b'66'
+Thu, 24 May 2018 15:45:21  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:45:28  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 15:45:28  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:45:28  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=c9be848de6afcd0a859aee68d12c3a41a87a0ca7c1c86e16073212ceffed8308517eeac0605fd51108fb7f86a973aa8dd270ebfaca987a203a1b1b90ade52e58&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 15:45:28  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 15:45:38  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 15:45:38  QQBot.py[line:323] INFO PTWebQQ: b22eb8d82a652d69f04e30089258b010ee5b790cd39e08a3f278b9050b88ccb4
+Thu, 24 May 2018 15:45:38  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:45:38  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:45:38  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:45:38  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:45:38  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:45:38  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:45:38  QQBot.py[line:752] CRITICAL local variable 'ret2' referenced before assignment
+Thu, 24 May 2018 15:47:37  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 15:47:47  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 15:47:47  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 15:47:47  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 15:47:47  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 15:47:47  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 15:47:47  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 15:47:47  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 15:47:52  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 15:47:57  QQBot.py[line:293] INFO b'67'
+Thu, 24 May 2018 15:47:57  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:48:04  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 15:48:04  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:48:04  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=db7d2f7301cfa3a2bfe6e268a6fd6ed738aa097b3114b7576fec3f0f88180e6fe5decf9fb048c612babcf010bab7fab833e64a566d7914b952deabe095b27a9a&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 15:48:04  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 15:48:14  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 15:48:14  QQBot.py[line:323] INFO PTWebQQ: f10a64995bfcae9bbb659a17013ee369fac554371da750e6e8ce329fa9121209
+Thu, 24 May 2018 15:48:14  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:48:14  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:48:14  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:48:14  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:48:14  QQBot.py[line:341] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:48:14  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:48:14  QQBot.py[line:752] CRITICAL local variable 'ret2' referenced before assignment
+Thu, 24 May 2018 15:49:39  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 15:49:49  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 15:49:49  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 15:49:49  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 15:49:49  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 15:49:49  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 15:49:49  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 15:49:49  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 15:49:54  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 15:49:59  QQBot.py[line:293] INFO b'66'
+Thu, 24 May 2018 15:49:59  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:50:06  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 15:50:06  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:50:06  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=a05ddf086e44d64b63fadeffe2b7084f98f46027e47c2f7de64e417491f89febb5443375665c5d4f6f66e6f3206811972c51b49d54afe4fdcc7d662b1a3816e6&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 15:50:06  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 15:50:16  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 15:50:16  QQBot.py[line:323] INFO PTWebQQ: 3b484fbc495f88ef63e68c7606140d47a62fd925918ca618e7802f6ec8682564
+Thu, 24 May 2018 15:50:16  QQBot.py[line:341] ERROR ERROR:'Request' object has no attribute 'encode'
+Thu, 24 May 2018 15:50:16  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:50:16  QQBot.py[line:341] ERROR ERROR:'Request' object has no attribute 'encode'
+Thu, 24 May 2018 15:50:16  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:50:16  QQBot.py[line:341] ERROR ERROR:'Request' object has no attribute 'encode'
+Thu, 24 May 2018 15:50:16  QQBot.py[line:344] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:50:16  QQBot.py[line:752] CRITICAL local variable 'ret2' referenced before assignment
+Thu, 24 May 2018 15:51:34  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 15:52:46  QQBot.py[line:749] CRITICAL <urlopen error [Errno 2] No such file or directory>
+Thu, 24 May 2018 15:52:50  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 15:53:00  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 15:53:00  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 15:53:00  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 15:53:00  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 15:53:00  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 15:53:00  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 15:53:00  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 15:53:05  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 15:53:10  QQBot.py[line:293] INFO b'66'
+Thu, 24 May 2018 15:53:10  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:53:17  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 15:53:17  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:53:17  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=8795bb70b92580321ad6b0b0ec678178107848c3cb96fdbb40463f70e0dfe6b29b6c055a4b82fcf065d589bfa4451edcff9d0f2feda7261d7859f33ceb4246fa&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 15:53:17  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 15:53:27  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 15:53:27  QQBot.py[line:323] INFO PTWebQQ: ef0f0572ce25477914b45293eac81fab09afac757266320248870234707e9e04
+Thu, 24 May 2018 15:53:27  QQBot.py[line:340] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:53:27  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:53:27  QQBot.py[line:340] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:53:27  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:53:27  QQBot.py[line:340] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:53:27  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:53:27  QQBot.py[line:749] CRITICAL list indices must be integers or slices, not str
+Thu, 24 May 2018 15:54:41  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 15:54:51  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 15:54:51  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 15:54:51  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 15:54:51  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 15:54:51  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 15:54:51  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 15:54:51  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 15:54:56  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 15:55:02  QQBot.py[line:293] INFO b'67'
+Thu, 24 May 2018 15:55:02  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:55:09  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 15:55:09  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:55:09  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=4326dc3f2cb59369763edaf0de0411e7e7cb615a0999ba0c423a626a10bcaee0dd91f0c8ba29e1238ef75dbced6fa745c61346db40465222575526659ff15947&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 15:55:09  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 15:55:18  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 15:55:18  QQBot.py[line:323] INFO PTWebQQ: 7a0584da8d90cd8186ee9552a384cbc25c1c6b3e9918207d54ce7f7ce6dbc8f0
+Thu, 24 May 2018 15:55:18  QQBot.py[line:340] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:55:18  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:55:18  QQBot.py[line:340] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:55:18  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:55:18  QQBot.py[line:340] ERROR ERROR:POST data should be bytes, an iterable of bytes, or a file object. It cannot be of type str.
+Thu, 24 May 2018 15:55:18  QQBot.py[line:343] CRITICAL 登录失败，正在重试
+Thu, 24 May 2018 15:55:18  QQBot.py[line:749] CRITICAL list indices must be integers or slices, not str
+Thu, 24 May 2018 15:57:19  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 15:57:29  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 15:57:29  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 15:57:29  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 15:57:29  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 15:57:29  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 15:57:29  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 15:57:29  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 15:57:34  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 15:57:39  QQBot.py[line:293] INFO b'66'
+Thu, 24 May 2018 15:57:39  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:57:46  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 15:57:46  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 15:57:46  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=77179a9eef4b1d3be28c8914a3ce54957deec94c3e2d4950686f99fd26e4c33889cbdd544776c1ca4424c412ddb80679659f2fd1fd271a126efa196b9f80a1cb&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 15:57:46  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 15:57:59  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 15:57:59  QQBot.py[line:323] INFO PTWebQQ: ab3c1d58e266a37e3d33e0091d2e5ba97c323ffed4544fd11eca291da22143e3
+Thu, 24 May 2018 15:58:08  QQBot.py[line:336] INFO getvfwebqq html:  b'{"retcode":0,"result":{"vfwebqq":"28f837de5188bfc0859bdbeb93c5455d2c744a4226333c3c2f15ba01c84dc4130d708bd9b92511f7"}}'
+Thu, 24 May 2018 15:58:08  QQBot.py[line:749] CRITICAL Login Retcode=100001
+Thu, 24 May 2018 15:59:55  QQBot.py[line:265] CRITICAL 正在获取登陆页面
+Thu, 24 May 2018 16:00:11  QQBot.py[line:268] CRITICAL 正在获取appid
+Thu, 24 May 2018 16:00:11  QQBot.py[line:270] CRITICAL 正在获取login_sig
+Thu, 24 May 2018 16:00:11  QQBot.py[line:272] INFO get sign : 
+Thu, 24 May 2018 16:00:11  QQBot.py[line:273] CRITICAL 正在获取pt_version
+Thu, 24 May 2018 16:00:11  QQBot.py[line:275] INFO get g_pt_version : 10270
+Thu, 24 May 2018 16:00:11  QQBot.py[line:276] CRITICAL 正在获取mibao_css
+Thu, 24 May 2018 16:00:11  QQBot.py[line:278] INFO get g_mibao_css : 
+Thu, 24 May 2018 16:00:18  QQBot.py[line:285] INFO [1] Get QRCode Picture Success.
+Thu, 24 May 2018 16:00:25  QQBot.py[line:293] INFO b'0'
+Thu, 24 May 2018 16:00:25  QQBot.py[line:294] INFO <class 'str'>
+Thu, 24 May 2018 16:00:25  QQBot.py[line:301] INFO [b'ptuiCB(', b'0', b',', b'0', b',', b'http://ptlogin2.web2.qq.com/check_sig?pttype=1&uin=3602054470&service=ptqrlogin&nodirect=0&ptsigx=127d123fbb5cd982278cd5e052ce22beb64b5fc05384eda9c735d39db7235676329f14687a23547bb172e3cd73c5ca305b6bb91945512df9bc6d320cfec80265&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&f_url=&ptlang=2052&ptredirect=100&aid=501004106&daid=164&j_later=0&low_login_hour=0&regmaster=0&pt_login_type=3&pt_aid=0&pt_aaid=16&pt_light=0&pt_3rd_aid=0', b',', b'0', b',', b'\xe7\x99\xbb\xe5\xbd\x95\xe6\x88\x90\xe5\x8a\x9f\xef\xbc\x81', b', ', b'overwork ai', b')']
+Thu, 24 May 2018 16:00:25  QQBot.py[line:305] CRITICAL 二维码已扫描，正在登陆
+Thu, 24 May 2018 16:00:35  QQBot.py[line:106] ERROR Get mibao_res Url Error.
+Thu, 24 May 2018 16:00:35  QQBot.py[line:323] INFO PTWebQQ: 53346adbf32e176682af1c158cdd127f5162557c360eeac1a316c2f9754b5bf5
+Thu, 24 May 2018 16:00:45  QQBot.py[line:336] INFO getvfwebqq html:  b'{"retcode":0,"result":{"vfwebqq":"598bff69a9f2c292c2183772da7b7b9cb279308b83dbe506ba7881ee3d491c4cc7df610e702cf36f"}}'
+Thu, 24 May 2018 16:00:45  QQBot.py[line:751] CRITICAL Login Retcode=100001

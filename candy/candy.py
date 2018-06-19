@@ -18,14 +18,14 @@ def get_last_phone_num():
     return phone_num
     
 def save_last_phone_num(phone_num):
-    current_num = str(phone_num)[3:11]
+    current_num = str(phone_num)[3:9]
     cp.set('phonenumconf','current_num',current_num)
     cp.write(open("phone_num.ini",'w'))
 
 def main():
     phone_num = get_last_phone_num()
     #调用注册函数
-    post_signup(phone_num,"123456","4640652","cn")
+    post_signup(phone_num,"123456","23571306","my")
     phone_num=int(phone_num)+1
     save_last_phone_num(phone_num)
 
@@ -36,15 +36,15 @@ def post_signup(phone_num,password,inviter_id,country_code):
     url = "https://candy.one/api/passport/signup"
     #{phone: "+8613465217567", country_code: "cn", password: "123456", inviter_id: "4325572"}
     values = {}
-    values['phone'] = '+86'+phone_num
+    values['phone'] = '+60'+phone_num
     values['country_code'] = country_code
     values['password'] = password
     values['inviter_id'] = inviter_id
     #values['inviter_id'] = '4325572'
     
     #临时解决https的问题
-    response = requests.post(url,values,verify=True,proxies=proxies)
-    #print(response.text)
+    response = requests.post(url,values,verify=True)
+    print(response.text)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.typesafe.play:play-datacommons_2.11:2.4.8">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.typesafe.play/play-datacommons_2.11/2.4.8/8c039fa9114774edb4000c2bc7bcd4122aa89a6c/play-datacommons_2.11-2.4.8.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.typesafe.play/play-datacommons_2.11/2.4.8/70030e7ec1c87145bf020d43e49b5005dd160684/play-datacommons_2.11-2.4.8-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.deeplearning4j:deeplearning4j-ui_2.11:1.0.0-beta">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.deeplearning4j/deeplearning4j-ui_2.11/1.0.0-beta/a79a072f418ff082b560f1b46dc8d0b5b2db13e4/deeplearning4j-ui_2.11-1.0.0-beta.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.deeplearning4j/deeplearning4j-ui_2.11/1.0.0-beta/8a1f2897f18fe2236c0a24ba0a8058d9e9c16779/deeplearning4j-ui_2.11-1.0.0-beta-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

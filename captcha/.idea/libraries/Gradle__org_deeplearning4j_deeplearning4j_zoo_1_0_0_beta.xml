@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.deeplearning4j:deeplearning4j-zoo:1.0.0-beta">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.deeplearning4j/deeplearning4j-zoo/1.0.0-beta/857606d1e3d9035465dec2c5fab788f1880f8436/deeplearning4j-zoo-1.0.0-beta.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.deeplearning4j/deeplearning4j-zoo/1.0.0-beta/f031dd604aee21755b7fb4085c33ea5680e93dd1/deeplearning4j-zoo-1.0.0-beta-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

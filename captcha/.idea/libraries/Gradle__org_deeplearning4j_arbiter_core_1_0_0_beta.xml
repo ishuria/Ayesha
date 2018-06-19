@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.deeplearning4j:arbiter-core:1.0.0-beta">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.deeplearning4j/arbiter-core/1.0.0-beta/8b077f215ab35c600a7edb1fe5986645e7664d82/arbiter-core-1.0.0-beta.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.deeplearning4j/arbiter-core/1.0.0-beta/6f6ab14f88d60a0af94a0bd1ce603ae9ce9485f8/arbiter-core-1.0.0-beta-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
