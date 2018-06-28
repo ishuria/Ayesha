@@ -69,33 +69,7 @@ def login():
     response = session.post(url,values,verify=True)
     print(response.text)
 
-def trade():
-    response = session.post('https://btex.com/trade/'+trade_pair,[],verify=True)
-    p = re.compile(r'<input type=\"hidden\" id=\"csrf\" value=\"(.+?)\" />')
-    m = p.search(response.text)
-    print(m.group())
-    csrf = m.group()[38:70]
-
-    url = "https://btex.com/priapi1/buy_coin"
-    values = {}
-    values['price'] = 0.00000900
-    values['num'] = 2000
-    values['type'] = 'TCO'
-    values['danwei'] = 'ETH'
-    values['csrf'] = csrf
-    values['trade_psw'] = trade_password
-    
-    #临时解决https的问题
-    response = session.post(url,values,verify=True)
-    print(response.text)
-
 def trade_eth_tco(csrf,price,num):
-    # response = session.post('https://btex.com/trade/'+trade_pair,[],verify=True)
-    # p = re.compile(r'<input type=\"hidden\" id=\"csrf\" value=\"(.+?)\" />')
-    # m = p.search(response.text)
-    # print(m.group())
-    # csrf = m.group()[38:70]
-
     url = "https://btex.com/priapi1/buy_coin"
     values = {}
     values['price'] = price
@@ -112,12 +86,6 @@ def trade_eth_tco(csrf,price,num):
     return response_data['info']
 
 def trade_tco_eth(csrf,price,num):
-    # response = session.post('https://btex.com/trade/'+trade_pair,[],verify=True)
-    # p = re.compile(r'<input type=\"hidden\" id=\"csrf\" value=\"(.+?)\" />')
-    # m = p.search(response.text)
-    # print(m.group())
-    # csrf = m.group()[38:70]
-
     url = "https://btex.com/priapi1/sell_coin"
     values = {}
     values['price'] = price
@@ -147,44 +115,49 @@ def get_rand_price(buy_price,sell_price):
     # low_price = sell_price*1000000000*0.95
     # return float(random.randint(int(low_price),sell_price*1000000000) ) / 1000000000
 
+def cancel_order(csrf,order_id):
+    values = {}
+    values['csrf'] = csrf
+    values['order_id'] = order_id
+    response = session.post('https://btex.com/priapi1/cancel_order/',values,verify=True)
+    
+def get_orders():
+    response = session.get('https://btex.com/home/orders',verify=True)
+    p = re.compile(r'<a style=\"cursor:pointer\" id=\'cancel_(.+?)\' class=\'btn btn-danger\'')
+    m = p.search(response.text)
+
+    if m is not None:
+        m1 = re.findall('\d+',m.group())
+        if m1 is not None:
+            return m1[0]
+        else:
+            return None
+    else:
+        return None
+
+
+
+
 if __name__ == '__main__':
-    # login()
-    # trade()
-    # post_price()
-    # post_trade()
-
-
-
     login()
     csrf = get_csrf()
     buy_price,sell_price = order_book()
-    # print(buy_price,sell_price)
-    # count  = 1
     trade_price = get_rand_price(buy_price,sell_price)
     buy_info = 'Operation Successfully'
     sell_info = 'Operation Successfully'
 
     while buy_price < sell_price and buy_info == 'Operation Successfully' and sell_info == 'Operation Successfully' and (trade_price > buy_price and trade_price < sell_price):
-        buy_info = trade_eth_tco(csrf,trade_price,trade_num)
         sell_info = trade_tco_eth(csrf,trade_price,trade_num)
+
+        buy_price,sell_price = order_book()
+        if sell_price <= trade_price:
+            order_id = get_orders()
+            cancel_order(csrf,order_id)
+        else:
+            buy_info = trade_eth_tco(csrf,trade_price,trade_num)
+        
         time.sleep(0.2)
         buy_price,sell_price = order_book()
         trade_price = get_rand_price(buy_price,sell_price)
         # count = count + 1
         print(buy_price,sell_price,trade_price)
-
-
-    # trade_history()
-    # buy_coin()
-    # while(True):
-    #     try:
-    #         main()
-    #     except Exception as e:
-    #         print ('str(Exception):\t', str(Exception))
-    #         print ('str(e):\t\t', str(e))
-    #         print ('repr(e):\t', repr(e))
-    #         #print ('e.message:\t', e.message)
-    #         print ('traceback.print_exc():', traceback.print_exc())
-    #         print ('traceback.format_exc():\n%s' % traceback.format_exc())
-    #     print("sleep")
-    #     time.sleep(1)
