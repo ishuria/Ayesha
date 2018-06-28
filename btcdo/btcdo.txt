@@ -1,0 +1,11 @@
+candy_20180509@163.com
+oy897874
+
+
+apikey
+API Key
+AAAAAj8VJC0T42X7D7lPtYGQLurDcDDg
+Secret Key
+16uJAvAII4B5rcxkiGVg
+?请将您的Secret Key存储在安全的地方，将不再显示，出于安全考虑，Secret Key只在创建时显示，若Secret Key遗失，可删除后创建并使用新的API。
+

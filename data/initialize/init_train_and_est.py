@@ -26,8 +26,8 @@ def start_train_process(command):
 
 
 if __name__ == '__main__':
-    begin = '2017-02-01'
-    end = '2017-03-01'
+    begin = '2017-03-01'
+    end = '2017-04-01'
 
     today = datetime.date.today().strftime("%Y-%m-%d")
 
