@@ -10,6 +10,7 @@ def depth():
     ssl._create_default_https_context = ssl._create_unverified_context
     url = config.api_url+"/v1/market/depth/"+config.symbol
     response = config.session.get(url=url,headers=config.headers)
+    print(response.text)
     price_data = json.loads(response.text)
     buy_orders = price_data['buyOrders']
     sell_orders = price_data['sellOrders']
